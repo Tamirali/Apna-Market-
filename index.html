@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>अपना मार्केट - ग्राहक पोर्टल</title>
+    <style>
+        body { font-family: sans-serif; background: #f4f7f6; margin: 0; padding: 10px; }
+        .header { background: #25D366; color: white; padding: 20px; border-radius: 0 0 20px 20px; text-align: center; margin-bottom: 15px; }
+        .info-bar { background: white; padding: 10px; border-radius: 10px; margin-bottom: 15px; font-size: 14px; border-left: 5px solid #3498db; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .product-card { background: white; border-radius: 12px; margin-bottom: 15px; padding: 12px; display: flex; align-items: center; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .product-img { width: 85px; height: 85px; border-radius: 8px; object-fit: cover; margin-right: 15px; cursor: pointer; border: 1px solid #eee; }
+        .order-btn { background: #25D366; color: white; border: none; padding: 10px 18px; border-radius: 8px; text-decoration: none; font-weight: bold; margin-left: auto; }
+        
+        /* जूम मोड (Modal) */
+        .modal { display: none; position: fixed; z-index: 1000; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); justify-content: center; align-items: center; }
+        .modal-content { max-width: 95%; max-height: 80%; border-radius: 10px; }
+        .close { position: absolute; top: 20px; right: 30px; color: white; font-size: 40px; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h2 id="storeTitle">लोड हो रहा है...</h2>
+    <p>अक्ल की जीत - तामिर अली</p>
+</div>
+
+<div class="info-bar" id="shopDetails">
+    📍 <b>पता:</b> <span id="addrDisp">...</span><br>
+    📞 <b>WhatsApp:</b> <span id="waDisp">...</span>
+</div>
+
+<div id="productList"></div>
+
+<div id="imageModal" class="modal" onclick="closeZoom()">
+    <span class="close">&times;</span>
+    <img class="modal-content" id="zoomedImg">
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+
+<script>
+    const firebaseConfig = { apiKey: "AIzaSyBfYd6Cbt6bDmK7Rmh_3RivoHTRl-5AweQ", projectId: "apna-market-61004" };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    const shopId = new URLSearchParams(window.location.search).get('id');
+    if(shopId) { loadStore(shopId.toLowerCase()); }
+
+    async function loadStore(id) {
+        const doc = await db.collection("shops").doc(id).get();
+        if(doc.exists) {
+            const data = doc.data();
+            if(data.status === "inactive") { document.body.innerHTML="<h2 style='text-align:center; padding:50px;'>⚠️ दुकान बंद है</h2>"; return; }
+            document.getElementById('storeTitle').innerText = id.toUpperCase() + " की दुकान";
+            document.getElementById('addrDisp').innerText = data.address || "सीवान, बिहार";
+            document.getElementById('waDisp').innerText = data.whatsapp || "नंबर नहीं है";
+            renderProducts(data.products || [], data.whatsapp);
+        }
+    }
+
+    function renderProducts(items, phone) {
+        const list = document.getElementById('productList');
+        let html = "";
+        items.forEach(p => {
+            const msg = window.encodeURIComponent(`नमस्ते, मुझे '${p.name}' खरीदना है।`);
+            html += `<div class="product-card">
+                <img src="${p.img}" class="product-img" onclick="openZoom('${p.img}')">
+                <div><b>${p.name}</b><br><span style="color:#27ae60;">₹${p.price}</span></div>
+                <a href="https://wa.me/91${phone}?text=${msg}" class="order-btn">Order</a>
+            </div>`;
+        });
+        list.innerHTML = html;
+    }
+
+    function openZoom(src) { document.getElementById('imageModal').style.display = "flex"; document.getElementById('zoomedImg').src = src; }
+    function closeZoom() { document.getElementById('imageModal').style.display = "none"; }
+</script>
+</body>
+</html>
