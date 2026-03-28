@@ -1,0 +1,73 @@
+<style>
+    /* ज़ूम करने वाला स्टाइल */
+    .product-img { 
+        cursor: pointer; 
+        transition: transform 0.2s; 
+    }
+    .product-img:hover { transform: scale(1.05); }
+
+    /* फुल स्क्रीन मोड (Modal) */
+    .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        top: 0; left: 0;
+        width: 100%; height: 100%;
+        background-color: rgba(0,0,0,0.9);
+        justify-content: center;
+        align-items: center;
+    }
+    .modal-content {
+        max-width: 90%;
+        max-height: 80%;
+        border-radius: 10px;
+        box-shadow: 0 0 20px rgba(255,255,255,0.2);
+    }
+    .close-modal {
+        position: absolute;
+        top: 20px; right: 30px;
+        color: white;
+        font-size: 40px;
+        font-weight: bold;
+        cursor: pointer;
+    }
+</style>
+
+<div id="imageModal" class="modal" onclick="closeZoom()">
+    <span class="close-modal">&times;</span>
+    <img class="modal-content" id="zoomedImg">
+</div>
+
+<script>
+    // सामान लोड करने वाले फंक्शन (renderProducts) में <img> टैग को ऐसे बदलें:
+    // <img src="${p.img}" class="product-img" onclick="openZoom('${p.img}')">
+
+    function openZoom(imgSrc) {
+        document.getElementById('imageModal').style.display = "flex";
+        document.getElementById('zoomedImg').src = imgSrc;
+    }
+
+    function closeZoom() {
+        document.getElementById('imageModal').style.display = "none";
+    }
+
+    // पुराने renderProducts फंक्शन में बस ये बदलाव करें:
+    function renderProducts(items, phone) {
+        const list = document.getElementById('productList');
+        let html = "";
+        items.forEach(p => {
+            const msg = window.encodeURIComponent(`नमस्ते, मुझे आपकी दुकान से '${p.name}' खरीदना है।`);
+            const waLink = `https://wa.me/91${phone}?text=${msg}`;
+            html += `
+                <div class="product-card">
+                    <img src="${p.img}" class="product-img" onclick="openZoom('${p.img}')" alt="क्लिक करके बड़ा देखें">
+                    <div>
+                        <b>${p.name}</b><br>
+                        <span style="color:#27ae60; font-weight:bold;">₹${p.price}</span>
+                    </div>
+                    <a href="${waLink}" class="order-btn">Order</a>
+                </div>`;
+        });
+        list.innerHTML = html || "<p style='text-align:center;'>कोई सामान उपलब्ध नहीं है।</p>";
+    }
+</script>
