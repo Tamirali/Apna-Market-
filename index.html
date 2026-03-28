@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>अपना मार्केट - ग्राहक पोर्टल</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; margin: 0; padding: 10px; }
+        .header { background: #25D366; color: white; padding: 20px; border-radius: 0 0 25px 25px; text-align: center; margin-bottom: 20px; }
+        .product-card { background: white; border-radius: 12px; margin-bottom: 15px; padding: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); display: flex; align-items: center; }
+        .product-img { width: 90px; height: 90px; border-radius: 10px; object-fit: cover; margin-right: 15px; border: 1px solid #eee; }
+        .product-info { flex: 1; }
+        .price { color: #27ae60; font-weight: bold; font-size: 18px; display: block; margin-top: 5px; }
+        .order-btn { background: #25D366; color: white; border: none; padding: 8px 18px; border-radius: 8px; cursor: pointer; text-decoration: none; font-weight: bold; font-size: 14px; }
+        .inactive-msg { background: white; padding: 50px 20px; border-radius: 20px; margin: 50px 10px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+    </style>
+</head>
+<body>
+
+<div id="shopContent">
+    <div class="header">
+        <h2 id="storeName">दुकान लोड हो रही है...</h2>
+        <p>तामीर अली द्वारा संचालित 'अपना मार्केट'</p>
+    </div>
+    <div id="productList"></div>
+</div>
+
+<div id="closedMessage" style="display:none;" class="inactive-msg">
+    <h2 style="color: #e74c3c;">⚠️ यह दुकान अभी बंद है</h2>
+    <p>भुगतान या दुकान चालू करवाने के लिए ओनर से संपर्क करें:</p>
+    <h3 style="font-size: 24px;">+918797221991</h3>
+    <a href="https://wa.me/918797221991" style="display:inline-block; background:#25D366; color:white; padding:12px 25px; border-radius:30px; text-decoration:none; font-weight:bold; margin-top:15px;">WhatsApp पर संपर्क करें</a>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+
+<script>
+    const firebaseConfig = {
+        apiKey: "AIzaSyBfYd6Cbt6bDmK7Rmh_3RivoHTRl-5AweQ",
+        authDomain: "apna-market-61004.firebaseapp.com",
+        projectId: "apna-market-61004",
+        storageBucket: "apna-market-61004.firebasestorage.app",
+        messagingSenderId: "944946596435",
+        appId: "1:944946596435:web:a61de9b08473f69d04d4a6"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const shopId = urlParams.get('id');
+
+    if (shopId) { loadStore(shopId.toLowerCase()); } else { document.body.innerHTML = "<h2 style='text-align:center; margin-top:50px;'>कृपया सही लिंक का उपयोग करें।</h2>"; }
+
+    async function loadStore(id) {
+        const doc = await db.collection("shops").doc(id).get();
+        if (doc.exists) {
+            const data = doc.data();
+            if (data.status === "inactive") {
+                document.getElementById('shopContent').style.display = 'none';
+                document.getElementById('closedMessage').style.display = 'block';
+                return;
+            }
+            document.getElementById('storeName').innerText = id.toUpperCase() + " की दुकान";
+            renderItems(data.products || []);
+        } else { document.body.innerHTML = "<h2 style='text-align:center;'>दुकान नहीं मिली!</h2>"; }
+    }
+
+    function renderItems(items) {
+        const list = document.getElementById('productList');
+        if (items.length === 0) { list.innerHTML = "<h3 style='text-align:center;'>अभी कोई सामान नहीं है।</h3>"; return; }
+        let html = "";
+        items.forEach(p => {
+            const whatsappLink = `https://wa.me/918797221991?text=नमस्ते, मुझे आपकी दुकान से '${p.name}' खरीदना है। कीमत: ₹${p.price}`;
+            html += `
+                <div class="product-card">
+                    <img src="${p.img}" class="product-img" onerror="this.src='https://via.placeholder.com/90?text=No+Image'">
+                    <div class="product-info">
+                        <b>${p.name}</b>
+                        <span class="price">₹${p.price}</span>
+                    </div>
+                    <a href="${whatsappLink}" class="order-btn">Order</a>
+                </div>`;
+        });
+        list.innerHTML = html;
+    }
+</script>
+</body>
+</html>
