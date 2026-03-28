@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>एडमिन पैनल - अपना मार्केट</title>
+    <style>
+        body { font-family: sans-serif; background: #f4f7f6; padding: 15px; text-align: center; }
+        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); max-width: 450px; margin: auto; }
+        input { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
+        .btn { width: 100%; padding: 12px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; color: white; margin: 5px 0; }
+        .btn-save { background: #25D366; }
+        .btn-view { background: #3498db; }
+        .p-item { display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #eee; padding: 10px 0; text-align: left; }
+        .p-img { width: 50px; height: 50px; border-radius: 5px; object-fit: cover; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h2>दुकानदार एडमिन</h2>
+    <input type="text" id="shopId" placeholder="अपनी Shop ID डालें (जैसे: ali786)" onchange="loadShop()">
+    <button class="btn btn-view" onclick="viewStore()">अपनी दुकान देखें</button>
+    <hr>
+    <input type="text" id="pName" placeholder="सामान का नाम">
+    <input type="number" id="pPrice" placeholder="कीमत (₹)">
+    <input type="text" id="pLink" placeholder="फोटो का Direct Link पेस्ट करें">
+    <button class="btn btn-save" onclick="saveData()">सामान सुरक्षित करें</button>
+    <div id="productList"></div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+
+<script>
+    const firebaseConfig = {
+        apiKey: "AIzaSyBfYd6Cbt6bDmK7Rmh_3RivoHTRl-5AweQ",
+        projectId: "apna-market-61004"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    // ID को हमेशा छोटे अक्षरों में और बिना स्पेस के करने के लिए
+    function getCleanId() {
+        return document.getElementById('shopId').value.trim().toLowerCase().replace(/\s+/g, '');
+    }
+
+    async function loadShop() {
+        const id = getCleanId();
+        if(!id) return;
+        const doc = await db.collection("shops").doc(id).get();
+        if(doc.exists) {
+            renderProducts(doc.data().products || [], id);
+        }
+    }
+
+    async function saveData() {
+        const id = getCleanId();
+        const name = document.getElementById('pName').value;
+        const price = document.getElementById('pPrice').value;
+        const img = document.getElementById('pLink').value;
+        
+        if(!id || !name || !price || !img) return alert("सब भरें!");
+
+        await db.collection("shops").doc(id).set({
+            products: firebase.firestore.FieldValue.arrayUnion({ name, price, img, pid: Date.now() }),
+            status: "active",
+            startDate: firebase.firestore.FieldValue.serverTimestamp()
+        }, { merge: true });
+        
+        alert("सफलतापूर्वक सेव हुआ!");
+        loadShop();
+    }
+
+    function renderProducts(items, shopId) {
+        const list = document.getElementById('productList');
+        let html = "<h4>आपके सामान:</h4>";
+        items.forEach(p => {
+            html += `<div class="p-item"><img src="${p.img}" class="p-img"><span>${p.name} - ₹${p.price}</span><button onclick="deleteP('${shopId}', ${p.pid})" style="color:red; border:none; background:none; cursor:pointer;">❌</button></div>`;
+        });
+        list.innerHTML = html;
+    }
+
+    function viewStore() {
+        const id = getCleanId();
+        if(id) window.location.href = 'index.html?id=' + id;
+    }
+
+    async function deleteP(shopId, pid) {
+        if(confirm("डिलीट करें?")) {
+            const doc = await db.collection("shops").doc(shopId).get();
+            const products = doc.data().products.filter(p => p.pid !== pid);
+            await db.collection("shops").doc(shopId).update({ products });
+            loadShop();
+        }
+    }
+</script>
+</body>
+</html>
