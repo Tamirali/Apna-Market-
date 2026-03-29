@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>दुकानदार एडमिन - अपना मार्केट</title>
+    <style>
+        body { font-family: 'Arial', sans-serif; background: #f0f2f5; padding: 15px; text-align: center; }
+        .card { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); max-width: 450px; margin: auto; }
+        input, textarea { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
+        .btn { width: 100%; padding: 12px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; color: white; margin: 5px 0; }
+        .btn-save { background: #25D366; }
+        #copyBox { display:none; background:#e8f5e9; padding:10px; border:1px dashed #25D366; margin-top:10px; border-radius:8px; }
+        .p-item { display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #eee; padding: 10px 0; }
+        .p-img { width: 50px; height: 50px; border-radius: 5px; object-fit: cover; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h2>🏪 दुकानदार एडमिन</h2>
+    <p style="font-size: 12px; color: #666;">अपनी दुकान का विवरण भरें और सामान जोड़ें</p>
+    
+    <input type="text" id="shopId" placeholder="दुकान की ID (जैसे: ali7125)" onchange="loadShop()">
+    <input type="number" id="shopWA" placeholder="व्हाट्सएप नंबर (बिना 91 के)">
+    <textarea id="shopAddr" placeholder="दुकान का पूरा पता (शहर और पिनकोड के साथ)"></textarea>
+    
+    <div id="copyBox">
+        <p style="margin:0; font-size:12px; color: #2e7d32;"><b>आपकी दुकान का लिंक तैयार है:</b></p>
+        <input type="text" id="customerUrl" readonly style="text-align:center; font-size:11px; background: #fff;">
+        <button class="btn" style="background:#075e54; font-size:12px;" onclick="copyLink()">लिंक कॉपी करें</button>
+    </div>
+
+    <hr style="margin: 20px 0;">
+    
+    <h3>📦 नया सामान जोड़ें</h3>
+    <input type="text" id="pName" placeholder="सामान का नाम">
+    <input type="number" id="pPrice" placeholder="कीमत (₹)">
+    <input type="text" id="pLink" placeholder="फोटो का लिंक (URL) यहाँ डालें">
+    <button class="btn btn-save" onclick="saveData()">सुरक्षित करें और लाइव करें</button>
+    
+    <div id="productList" style="text-align: left; margin-top: 20px;"></div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+
+<script>
+    // Firebase कॉन्फ़िगरेशन
+    const firebaseConfig = { 
+        apiKey: "AIzaSyBfYd6Cbt6bDmK7Rmh_3RivoHTRl-5AweQ", 
+        projectId: "apna-market-61004" 
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    // ID को साफ करने का फंक्शन
+    function getCleanId() { 
+        return document.getElementById('shopId').value.trim().toLowerCase().replace(/\s+/g, ''); 
+    }
+
+    // पुरानी दुकान का डेटा लोड करना
+    async function loadShop() {
+        const id = getCleanId();
+        if(!id) return;
+        
+        const doc = await db.collection("shops").doc(id).get();
+        if(doc.exists) {
+            const data = doc.data();
+            document.getElementById('shopWA').value = data.whatsapp || "";
+            document.getElementById('shopAddr').value = data.address || "";
+            showLink(id);
+            renderProducts(data.products || [], id);
+        }
+    }
+
+    // डेटा सुरक्षित करना (तारीख के साथ)
+    async function saveData() {
+        const id = getCleanId();
+        const wa = document.getElementById('shopWA').value;
+        const addr = document.getElementById('shopAddr').value;
+        const name = document.getElementById('pName').value;
+        const price = document.getElementById('pPrice').value;
+        const img = document.getElementById('pLink').value;
+
+        if(!id || !wa || !name || !price || !img) {
+            alert("कृपया सभी खाने भरें!");
+            return;
+        }
+
+        // Firestore में डेटा सेव करना
+        await db.collection("shops").doc(id).set({
+            whatsapp: wa, 
+            address: addr, 
+            status: "active",
+            // यदि दुकान नई है, तो आज की तारीख दर्ज होगी
+            startDate: firebase.firestore.FieldValue.serverTimestamp(), 
+            products: firebase.firestore.FieldValue.arrayUnion({ 
+                name: name, 
+                price: price, 
+                img: img, 
+                pid: Date.now() 
+            })
+        }, { merge: true });
+
+        alert("बधाई हो! आपका सामान और दुकान की तारीख सुरक्षित हो गई है।");
+        showLink(id);
+        loadShop();
+        
+        // फॉर्म साफ करना
+        document.getElementById('pName').value = "";
+        document.getElementById('pPrice').value = "";
+        document.getElementById('pLink').value = "";
+    }
+
+    function showLink(id) {
+        const url = `https://tamirali.github.io/Apna-Market-/index.html?id=${id}`;
+        document.getElementById('customerUrl').value = url;
+        document.getElementById('copyBox').style.display = 'block';
+    }
+
+    function copyLink() {
+        const el = document.getElementById('customerUrl');
+        el.select();
+        document.execCommand('copy');
+        alert("दुकान का लिंक कॉपी हो गया! अब इसे ग्राहकों को भेजें।");
+    }
+
+    function renderProducts(items, sid) {
+        const list = document.getElementById('productList');
+        let html = "<strong>आपके सामान की लिस्ट:</strong>";
+        items.forEach(p => {
+            html += `
+                <div class="p-item">
+                    <img src="${p.img}" class="p-img">
+                    <div style="flex-grow:1; margin-left:10px;">
+                        <b>${p.name}</b><br>₹${p.price}
+                    </div>
+                    <button onclick="deleteP('${sid}', ${p.pid})" style="color:red; border:none; background:none; cursor:pointer; font-size:18px;">🗑️</button>
+                </div>`;
+        });
+        list.innerHTML = html;
+    }
+
+    async function deleteP(sid, pid) {
+        if(confirm("क्या आप इस सामान को हटाना चाहते हैं?")) {
+            const doc = await db.collection("shops").doc(sid).get();
+            const filtered = doc.data().products.filter(x => x.pid !== pid);
+            await db.collection("shops").doc(sid).update({ products: filtered });
+            loadShop();
+        }
+    }
+</script>
+</body>
+</html>
