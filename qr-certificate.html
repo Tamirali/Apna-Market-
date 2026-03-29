@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>दुकानदार क्यूआर सर्टिफिकेट - अपना मार्केट</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f4f7f6; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 20px; }
+        .certificate-card { background: white; width: 100%; max-width: 400px; border-radius: 25px; box-shadow: 0 15px 35px rgba(0,0,0,0.15); padding: 30px; text-align: center; border: 6px solid #25D366; position: relative; box-sizing: border-box; }
+        
+        .badge { position: absolute; top: -18px; left: 50%; transform: translateX(-50%); background: #25D366; color: white; padding: 6px 25px; border-radius: 25px; font-weight: bold; font-size: 13px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        
+        .header h1 { color: #075e54; margin: 10px 0 5px 0; font-size: 28px; letter-spacing: 1px; }
+        .header p { color: #666; margin: 0 0 25px 0; font-size: 14px; font-weight: 500; }
+
+        .qr-box { background: #f9f9f9; padding: 25px; border-radius: 20px; border: 1px solid #eee; display: inline-block; margin-bottom: 20px; width: 100%; box-sizing: border-box; }
+        #qrcode { display: flex; justify-content: center; margin-bottom: 15px; }
+        #qrcode img { border: 5px solid white; border-radius: 10px; }
+        
+        .shop-name { font-size: 22px; font-weight: bold; color: #333; display: block; text-transform: uppercase; margin-top: 10px; }
+        .agent-info { font-size: 13px; color: #1565c0; margin-top: 8px; font-weight: bold; }
+
+        .scan-text { font-size: 14px; color: #444; margin: 15px 0; line-height: 1.4; }
+        
+        .info-footer { border-top: 2px solid #f0f0f0; padding-top: 20px; margin-top: 10px; text-align: left; }
+        .info-row { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 13px; color: #555; }
+        .info-row strong { color: #222; }
+
+        .print-btn { display: block; width: 100%; background: #075e54; color: white; padding: 12px; text-decoration: none; border-radius: 10px; font-weight: bold; margin-top: 20px; border: none; cursor: pointer; font-size: 16px; transition: 0.3s; }
+        .print-btn:hover { background: #25D366; }
+
+        @media print { .print-btn { display: none; } body { background: white; padding: 0; } .certificate-card { box-shadow: none; border: 4px solid #25D366; } }
+    </style>
+</head>
+<body>
+
+    <div class="certificate-card">
+        <div class="badge">सत्यापित डिजिटल दुकान</div>
+        
+        <div class="header">
+            <h1>🏪 अपना मार्केट</h1>
+            <p>डिजिटल मिशन - तामिर अली</p>
+        </div>
+
+        <div class="qr-box">
+            <div id="qrcode"></div>
+            <span class="shop-name" id="displayShopId">लोड हो रहा है...</span>
+            <div class="agent-info" id="displayAgent">एजेंट: जाँच जारी है...</div>
+        </div>
+
+        <p class="scan-text"><b>ग्राहक ध्यान दें:</b> इस क्यूआर कोड को स्कैन करें और सीधा दुकानदार के <b>WhatsApp</b> पर ऑर्डर भेजें।</p>
+
+        <div class="info-footer">
+            <div class="info-row"><span>व्हाट्सएप नंबर:</span> <strong id="displayWa">...</strong></div>
+            <div class="info-row"><span>सत्यापित कर्ता:</span> <strong>तामिर अली</strong></div>
+            <div class="info-row"><span>हेल्पलाइन:</span> <strong>+91 8797221991</strong></div>
+        </div>
+
+        <button class="print-btn" onclick="window.print()">🖨️ सर्टिफिकेट प्रिंट करें</button>
+    </div>
+
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+
+<script>
+    // Firebase कॉन्फ़िगरेशन
+    const firebaseConfig = { 
+        apiKey: "AIzaSyBfYd6Cbt6bDmK7Rmh_3RivoHTRl-5AweQ", 
+        projectId: "apna-market-61004" 
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    // URL से Shop ID प्राप्त करना
+    const params = new URLSearchParams(window.location.search);
+    const sid = params.get('id');
+
+    async function generateCertificate() {
+        if (!sid) {
+            document.getElementById('displayShopId').innerText = "आईडी गायब है!";
+            return;
+        }
+
+        try {
+            const doc = await db.collection("shops").doc(sid).get();
+            if (doc.exists) {
+                const data = doc.data();
+                const shopUrl = `https://tamirali.github.io/Apna-Market-/index.html?id=${sid}`;
+
+                // क्यूआर कोड बनाना
+                new QRCode(document.getElementById("qrcode"), {
+                    text: shopUrl,
+                    width: 160,
+                    height: 160,
+                    colorDark : "#075e54",
+                    colorLight : "#ffffff",
+                    correctLevel : QRCode.CorrectLevel.H
+                });
+
+                // डेटा दिखाना
+                document.getElementById('displayShopId').innerText = sid;
+                document.getElementById('displayAgent').innerText = `एजेंट: ${data.agentName || 'अधिकृत'}`;
+                document.getElementById('displayWa').innerText = data.whatsapp || "उपलब्ध नहीं";
+            } else {
+                document.getElementById('displayShopId').innerText = "दुकान नहीं मिली!";
+            }
+        } catch (error) {
+            console.error("Error:", error);
+            document.getElementById('displayShopId').innerText = "सर्वर एरर!";
+        }
+    }
+
+    generateCertificate();
+</script>
+
+</body>
+</html>
