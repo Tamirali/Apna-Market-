@@ -1,0 +1,26 @@
+async function saveData() {
+    const id = getCleanId();
+    const wa = document.getElementById('shopWA').value;
+    const addr = document.getElementById('shopAddr').value;
+    const name = document.getElementById('pName').value;
+    const price = document.getElementById('pPrice').value;
+    const img = document.getElementById('pLink').value;
+
+    if(!id || !wa || !name || !price || !img) return alert("सब भरें!");
+
+    // दुकान का डेटा सेव करते समय तारीख भी जोड़ना
+    await db.collection("shops").doc(id).set({
+        whatsapp: wa, 
+        address: addr, 
+        status: "active",
+        // अगर तारीख पहले से नहीं है, तो आज की तारीख डाल दें (Server Timestamp)
+        startDate: firebase.firestore.FieldValue.serverTimestamp(), 
+        products: firebase.firestore.FieldValue.arrayUnion({ 
+            name, price, img, pid: Date.now() 
+        })
+    }, { merge: true });
+
+    alert("दुकान और तारीख सुरक्षित हो गई!");
+    showLink(id);
+    loadShop();
+}
