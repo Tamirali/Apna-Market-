@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>दुकानदार एडमिन - अपना मार्केट</title>
+    <style>
+        * { box-sizing: border-box; }
+        body { font-family: 'Arial', sans-serif; background: #f0f2f5; padding: 10px; text-align: center; margin: 0; }
+        .card { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); max-width: 500px; margin: auto; }
+        .safety-alert { background: #ff4757; color: white; padding: 12px; font-size: 13px; font-weight: bold; border-radius: 10px; margin-bottom: 15px; }
+        .help-btn { background: #3498db; color: white; padding: 8px 15px; border-radius: 20px; font-size: 12px; border: none; cursor: pointer; margin-bottom: 15px; }
+        #helpBox { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; width: 90%; max-width: 400px; padding: 20px; border-radius: 15px; z-index: 1000; text-align: left; }
+        #overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 999; }
+        input, textarea { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 8px; }
+        .btn { width: 100%; padding: 12px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; color: white; margin: 5px 0; }
+        .btn-save { background: #25D366; font-size: 16px; }
+        .btn-upload { background: #3498db; }
+        .banner-preview { width: 100%; height: 120px; object-fit: cover; border-radius: 10px; margin: 10px 0; border: 2px dashed #25D366; }
+        .p-item { display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #eee; padding: 10px 0; }
+        .p-img { width: 50px; height: 50px; border-radius: 5px; object-fit: cover; }
+        .agent-section { background: #e3f2fd; padding: 12px; border-radius: 10px; margin-bottom: 15px; }
+        #copyBox { display: none; background: #e8f5e9; padding: 10px; border-radius: 8px; margin-top: 10px; }
+    </style>
+</head>
+<body>
+
+<div id="overlay" onclick="toggleHelp()"></div>
+<div id="helpBox">
+    <h3 style="color:#075e54;">📖 काम कैसे करें?</h3>
+    <p><b>1. फोटो डालें:</b> 'फोटो अपलोड' से link कॉपी करें और पेस्ट करें।</p>
+    <p><b>2. Banner बदलें:</b> Banner URL डालकर 'Banner सेट करें' दबाएं।</p>
+    <p><b>3. नियम:</b> दुकानदार से केवल ₹20 ही लें।</p>
+    <button class="btn" style="background:#ff4757;" onclick="toggleHelp()">बंद करें</button>
+</div>
+
+<div class="card">
+    <div class="safety-alert">⚠️ दुकानदार को लूटें नहीं! केवल ₹20 ही लें।</div>
+    <button class="help-btn" onclick="toggleHelp()">❓ काम कैसे करें?</button>
+    <h2 style="color:#075e54;">🏪 अपना मार्केट एडमिन</h2>
+    
+    <div class="agent-section">
+        <input type="text" id="agentName" placeholder="एजेंट का नाम (आपका नाम)">
+        <input type="number" id="agentWA" placeholder="आपका व्हाट्सएप नंबर">
+    </div>
+
+    <input type="text" id="shopId" placeholder="दुकान की ID (जैसे: ali786)" onchange="loadShop()">
+    <input type="number" id="shopWA" placeholder="दुकानदार का व्हाट्सएप नंबर">
+    <textarea id="shopAddr" placeholder="दुकान का पूरा पता"></textarea>
+    
+    <!-- Banner Section - नया feature -->
+    <div style="background:#f9f9f9; padding:10px; border-radius:10px; margin:15px 0;">
+        <h4 style="margin:0 0 10px 0;">🎨 दुकान का Banner / Background</h4>
+        <img id="bannerPreview" class="banner-preview" src="https://via.placeholder.com/500x120?text=Current+Banner">
+        <input type="text" id="bannerUrl" placeholder="Banner फोटो का Direct Link पेस्ट करें">
+        <button class="btn" style="background:#FF9800;" onclick="saveBanner()">🖼️ Banner सेट करें</button>
+        <p style="font-size:11px; color:#666;">टिप: postimages.org से फोटो अपलोड करें और Direct Link यहाँ डालें</p>
+    </div>
+
+    <div id="copyBox">
+        <p><b>दुकान का लिंक:</b></p>
+        <input type="text" id="customerUrl" readonly style="text-align:center;">
+        <button class="btn" style="background:#075e54;" onclick="copyLink()">लिंक कॉपी करें</button>
+    </div>
+
+    <hr>
+    <h3>📦 सामान जोड़ें</h3>
+    <input type="text" id="pName" placeholder="सामान का नाम">
+    <input type="number" id="pPrice" placeholder="कीमत (₹)">
+    <input type="text" id="pLink" placeholder="फोटो का Direct Link">
+    <a href="https://postimages.org/" target="_blank" class="btn btn-upload">📸 फोटो अपलोड करें</a>
+    <button class="btn btn-save" onclick="saveData()">सुरक्षित और लाइव करें</button>
+    
+    <div id="productList" style="margin-top: 20px; text-align: left;"></div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+
+<script>
+    const firebaseConfig = { apiKey: "AIzaSyBfYd6Cbt6bDmK7Rmh_3RivoHTRl-5AweQ", projectId: "apna-market-61004" };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    function toggleHelp() {
+        const box = document.getElementById('helpBox');
+        const overlay = document.getElementById('overlay');
+        const isVisible = box.style.display === 'block';
+        box.style.display = isVisible ? 'none' : 'block';
+        overlay.style.display = isVisible ? 'none' : 'block';
+    }
+
+    function getCleanId() { return document.getElementById('shopId').value.trim().toLowerCase().replace(/\s+/g, ''); }
+
+    async function loadShop() {
+        const id = getCleanId();
+        if(!id) return;
+        const doc = await db.collection("shops").doc(id).get();
+        if(doc.exists) {
+            const data = doc.data();
+            document.getElementById('shopWA').value = data.whatsapp || "";
+            document.getElementById('shopAddr').value = data.address || "";
+            document.getElementById('agentName').value = data.agentName || "";
+            document.getElementById('agentWA').value = data.agentWA || "";
+            if(data.bannerUrl) {
+                document.getElementById('bannerPreview').src = data.bannerUrl;
+                document.getElementById('bannerUrl').value = data.bannerUrl;
+            }
+            showLink(id);
+            renderProducts(data.products || [], id);
+        }
+    }
+
+    async function saveBanner() {
+        const id = getCleanId();
+        const bannerUrl = document.getElementById('bannerUrl').value;
+        if(!id || !bannerUrl) { alert("पहले दुकान ID डालें और Banner URL डालें!"); return; }
+        await db.collection("shops").doc(id).set({ bannerUrl: bannerUrl }, { merge: true });
+        document.getElementById('bannerPreview').src = bannerUrl;
+        alert("Banner सफलतापूर्वक सेट हो गया!");
+    }
+
+    async function saveData() {
+        const id = getCleanId();
+        const wa = document.getElementById('shopWA').value;
+        const addr = document.getElementById('shopAddr').value;
+        const aName = document.getElementById('agentName').value;
+        const aWA = document.getElementById('agentWA').value;
+        const name = document.getElementById('pName').value;
+        const price = document.getElementById('pPrice').value;
+        const img = document.getElementById('pLink').value;
+
+        if(!id || !wa || !name || !price || !img || !aName || !aWA) {
+            alert("सभी जानकारी भरें!");
+            return;
+        }
+
+        await db.collection("shops").doc(id).set({
+            whatsapp: wa, address: addr, agentName: aName, agentWA: aWA,
+            status: "active",
+            startDate: firebase.firestore.FieldValue.serverTimestamp(),
+            products: firebase.firestore.FieldValue.arrayUnion({ name, price, img, pid: Date.now() })
+        }, { merge: true });
+
+        alert("सामान सुरक्षित हो गया!");
+        showLink(id);
+        loadShop();
+        document.getElementById('pName').value = ""; 
+        document.getElementById('pPrice').value = ""; 
+        document.getElementById('pLink').value = "";
+    }
+
+    function showLink(id) {
+        const url = `https://tamirali.github.io/Apna-Market-/index.html?id=${id}`;
+        document.getElementById('customerUrl').value = url;
+        document.getElementById('copyBox').style.display = 'block';
+    }
+
+    function copyLink() {
+        const el = document.getElementById('customerUrl');
+        el.select();
+        document.execCommand('copy');
+        alert("लिंक कॉपी हो गया!");
+    }
+
+    function renderProducts(items, sid) {
+        const list = document.getElementById('productList');
+        let html = "<strong>📋 सामान की लिस्ट:</strong>";
+        items.forEach(p => {
+            html += `<div class="p-item">
+                <img src="${p.img}" class="p-img" onerror="this.src='https://via.placeholder.com/50'">
+                <div style="flex-grow:1; margin-left:10px;"><b>${p.name}</b><br>₹${p.price}</div>
+                <button onclick="deleteP('${sid}', ${p.pid})" style="color:red; border:none; background:none; cursor:pointer;">🗑️</button>
+            </div>`;
+        });
+        list.innerHTML = html || "<p>कोई सामान नहीं</p>";
+    }
+
+    async function deleteP(sid, pid) {
+        if(confirm("डिलीट करें?")) {
+            const doc = await db.collection("shops").doc(sid).get();
+            const filtered = doc.data().products.filter(x => x.pid !== pid);
+            await db.collection("shops").doc(sid).update({ products: filtered });
+            loadShop();
+        }
+    }
+</script>
+</body>
+</html>
