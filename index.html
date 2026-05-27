@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>अपना मार्केट - डिजिटल दुकान</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: #f0f2f5; }
+        
+        /* Banner Style */
+        .shop-banner { width: 100%; height: 180px; object-fit: cover; background: #25D366; }
+        
+        .header { background: linear-gradient(135deg, #075e54, #128C7E); color: white; padding: 15px 20px; text-align: center; }
+        .store-name { font-size: 1.8rem; letter-spacing: 1px; }
+        
+        .mission-box { background: #fff3cd; border: 2px dashed #ffc107; padding: 12px; border-radius: 12px; margin: 12px; text-align: center; font-size: 13px; }
+        .master-btn { background: #075e54; color: white; padding: 8px 16px; border-radius: 8px; text-decoration: none; display: inline-block; margin-top: 8px; font-size: 12px; }
+        
+        .info-bar { background: white; padding: 12px; margin: 12px; border-radius: 12px; border-left: 5px solid #25D366; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        
+        /* Horizontal Scroll - नया feature */
+        .section-title { padding: 0 12px; margin: 15px 0 10px 0; font-size: 1.3rem; color: #075e54; display: flex; justify-content: space-between; align-items: center; }
+        .scroll-hint { font-size: 11px; color: #888; font-weight: normal; }
+        
+        .scroll-wrapper { overflow-x: auto; overflow-y: hidden; white-space: nowrap; scroll-behavior: smooth; padding: 8px 8px 20px 8px; cursor: grab; }
+        .scroll-wrapper:active { cursor: grabbing; }
+        .scroll-wrapper::-webkit-scrollbar { height: 6px; }
+        .scroll-wrapper::-webkit-scrollbar-track { background: #e0e0e0; border-radius: 10px; }
+        .scroll-wrapper::-webkit-scrollbar-thumb { background: #25D366; border-radius: 10px; }
+        
+        .product-row { display: inline-flex; gap: 16px; padding: 0 8px; }
+        
+        .product-card { width: 210px; background: white; border-radius: 20px; overflow: hidden; box-shadow: 0 5px 15px rgba(0,0,0,0.1); transition: transform 0.2s; white-space: normal; cursor: pointer; }
+        .product-card:hover { transform: translateY(-5px); }
+        .product-img { width: 100%; height: 170px; object-fit: cover; background: #f5f5f5; }
+        .product-info { padding: 12px; }
+        .product-name { font-weight: bold; font-size: 14px; margin-bottom: 5px; white-space: normal; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+        .product-price { color: #e67e22; font-weight: bold; font-size: 16px; margin: 5px 0; }
+        
+        .add-to-cart { background: #25D366; color: white; border: none; padding: 8px 12px; border-radius: 25px; width: 100%; font-weight: bold; cursor: pointer; margin-top: 8px; font-size: 12px; transition: 0.2s; }
+        .add-to-cart:hover { background: #1da15b; }
+        
+        /* Cart Section - Multiple Order का नया feature */
+        .cart-section { position: sticky; bottom: 0; background: white; margin: 12px; padding: 12px 16px; border-radius: 30px; box-shadow: 0 -5px 20px rgba(0,0,0,0.1); display: flex; justify-content: space-between; align-items: center; z-index: 100; }
+        .cart-info { background: #25D366; color: white; padding: 5px 12px; border-radius: 25px; font-weight: bold; }
+        .order-all-btn { background: #075e54; color: white; border: none; padding: 10px 20px; border-radius: 30px; font-weight: bold; cursor: pointer; font-size: 14px; }
+        .cart-items-list { font-size: 11px; color: #555; max-width: 150px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+        
+        .modal { display: none; position: fixed; z-index: 1000; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); justify-content: center; align-items: center; }
+        .modal-content { max-width: 90%; max-height: 80%; border-radius: 10px; }
+        
+        .toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); background: #1e2a3a; color: white; padding: 10px 20px; border-radius: 30px; font-size: 12px; z-index: 200; }
+    </style>
+</head>
+<body>
+
+<!-- Banner Image - दुकानदार जो चाहे वो banner लगा सकता है -->
+<img id="shopBanner" class="shop-banner" src="https://via.placeholder.com/800x180?text=Loading+Banner">
+
+<div class="header">
+    <h2 class="store-name" id="storeTitle">दुकान लोड हो रही है...</h2>
+    <p>तामिर अली मिशन</p>
+</div>
+
+<div class="mission-box">
+    <strong>🚀 अपनी ऑनलाइन दुकान बनाएँ!</strong><br>
+    <a href="https://wa.me/918797221991?text=नमस्ते तामिर अली जी, मुझे अपनी ऑनलाइन दुकान बनवानी है।" class="master-btn">📞 हमसे संपर्क करें</a>
+</div>
+
+<div class="info-bar" id="shopDetails">
+    📍 <b>पता:</b> <span id="addrDisp">...</span><br>
+    📞 <b>दुकानदार व्हाट्सएप:</b> <span id="waDisp">...</span>
+</div>
+
+<div class="section-title">
+    🛒 हमारे उत्पाद 
+    <span class="scroll-hint">👈 स्क्रॉल करें 👉</span>
+</div>
+
+<!-- Horizontal Scroll Products -->
+<div class="scroll-wrapper" id="scrollWrapper">
+    <div class="product-row" id="productRow"></div>
+</div>
+
+<!-- Cart Section - Multiple Products Order -->
+<div class="cart-section" id="cartSection" style="display: none;">
+    <div>
+        <span class="cart-info" id="cartCount">0</span>
+        <div class="cart-items-list" id="cartItemsList">कोई सामान नहीं</div>
+    </div>
+    <button class="order-all-btn" id="orderAllBtn" onclick="orderMultipleProducts()">🛍️ एक साथ ऑर्डर करें</button>
+</div>
+
+<div id="imageModal" class="modal" onclick="closeZoom()">
+    <img class="modal-content" id="zoomedImg">
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+
+<script>
+    const firebaseConfig = { apiKey: "AIzaSyBfYd6Cbt6bDmK7Rmh_3RivoHTRl-5AweQ", projectId: "apna-market-61004" };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    // Cart Array for Multiple Products
+    let cart = [];
+    let currentShopId = "";
+    let currentPhone = "";
+
+    const shopId = new URLSearchParams(window.location.search).get('id');
+    if(shopId) { loadStore(shopId.toLowerCase()); }
+
+    async function loadStore(id) {
+        currentShopId = id;
+        const doc = await db.collection("shops").doc(id).get();
+        if(doc.exists) {
+            const data = doc.data();
+            if(data.status === "inactive") { 
+                document.body.innerHTML="<h2 style='text-align:center; padding-top:50px;'>⚠️ यह दुकान अभी बंद है।</h2>"; 
+                return; 
+            }
+            document.getElementById('storeTitle').innerText = id.toUpperCase();
+            document.getElementById('addrDisp').innerText = data.address || "बिहार, भारत";
+            document.getElementById('waDisp').innerText = data.whatsapp || "उपलब्ध नहीं";
+            currentPhone = data.whatsapp;
+            
+            // Set Banner if exists
+            if(data.bannerUrl) {
+                document.getElementById('shopBanner').src = data.bannerUrl;
+            } else {
+                document.getElementById('shopBanner').src = "https://via.placeholder.com/800x180?text=My+Digital+Shop";
+            }
+            
+            renderProductsHorizontal(data.products || []);
+        } else {
+            document.body.innerHTML="<h2 style='text-align:center; padding-top:50px;'>❌ दुकान नहीं मिली।</h2>";
+        }
+    }
+
+    function renderProductsHorizontal(items) {
+        const container = document.getElementById('productRow');
+        if(!container) return;
+        
+        if(items.length === 0) {
+            container.innerHTML = '<div style="padding:40px; text-align:center;">अभी कोई सामान उपलब्ध नहीं है।</div>';
+            return;
+        }
+        
+        let html = "";
+        items.forEach((p, idx) => {
+            html += `
+                <div class="product-card">
+                    <img src="${p.img}" class="product-img" onclick="openZoom('${p.img}')" onerror="this.src='https://via.placeholder.com/200'">
+                    <div class="product-info">
+                        <div class="product-name">${escapeHtml(p.name)}</div>
+                        <div class="product-price">₹ ${p.price}</div>
+                        <button class="add-to-cart" onclick="addToCart({id:${p.pid}, name:'${escapeHtml(p.name)}', price:${p.price}, img:'${p.img}'})">
+                            🛒 + ऑर्डर में जोड़ें
+                        </button>
+                    </div>
+                </div>
+            `;
+        });
+        container.innerHTML = html;
+    }
+
+    // Add to Cart Function
+    function addToCart(product) {
+        const existing = cart.find(item => item.id === product.id);
+        if(existing) {
+            showToast(`"${product.name}" पहले से कार्ट में है!`);
+            return;
+        }
+        cart.push({...product});
+        updateCartUI();
+        showToast(`✅ "${product.name}" कार्ट में जोड़ा गया`);
+    }
+    
+    function removeFromCart(index) {
+        const removed = cart[index];
+        cart.splice(index, 1);
+        updateCartUI();
+        showToast(`❌ "${removed.name}" हटा दिया गया`);
+    }
+    
+    function updateCartUI() {
+        const cartSection = document.getElementById('cartSection');
+        const cartCountSpan = document.getElementById('cartCount');
+        const cartItemsList = document.getElementById('cartItemsList');
+        
+        if(cart.length > 0) {
+            cartSection.style.display = 'flex';
+            cartCountSpan.innerText = cart.length;
+            let itemsText = cart.map((item, idx) => `${item.name} (₹${item.price}) ✖️`).join(', ');
+            cartItemsList.innerHTML = itemsText.substring(0, 60) + (itemsText.length > 60 ? '...' : '');
+            // Make items clickable to remove (optional)
+            cartItemsList.style.cursor = 'pointer';
+            cartItemsList.title = 'क्लिक करें हटाने के लिए';
+            cartItemsList.onclick = () => {
+                if(cart.length > 0) {
+                    removeFromCart(cart.length - 1);
+                }
+            };
+        } else {
+            cartSection.style.display = 'none';
+        }
+    }
+    
+    // Multiple Products Order - एक साथ सभी products order करें
+    function orderMultipleProducts() {
+        if(cart.length === 0) {
+            showToast("कोई सामान कार्ट में नहीं है!");
+            return;
+        }
+        
+        let message = "नमस्ते, मैं ये सामान खरीदना चाहता/चाहती हूँ:\n\n";
+        cart.forEach((item, i) => {
+            message += `${i+1}. ${item.name} - ₹${item.price}\n`;
+        });
+        message += `\nकुल कीमत: ₹${cart.reduce((sum, item) => sum + item.price, 0)}\n\nकृपया मुझे ऑर्डर कन्फर्म करें।`;
+        
+        const encodedMsg = encodeURIComponent(message);
+        const waLink = `https://wa.me/91${currentPhone}?text=${encodedMsg}`;
+        
+        // Clear cart after order
+        cart = [];
+        updateCartUI();
+        
+        window.open(waLink, '_blank');
+        showToast("📦 ऑर्डर भेजा जा रहा है! कार्ट खाली हो गया।");
+    }
+    
+    function showToast(msg) {
+        let toast = document.querySelector('.toast');
+        if(!toast) {
+            toast = document.createElement('div');
+            toast.className = 'toast';
+            document.body.appendChild(toast);
+        }
+        toast.innerText = msg;
+        toast.style.opacity = '1';
+        setTimeout(() => { toast.style.opacity = '0'; }, 2000);
+    }
+    
+    function openZoom(src) { 
+        document.getElementById('imageModal').style.display = "flex"; 
+        document.getElementById('zoomedImg').src = src; 
+    }
+    function closeZoom() { 
+        document.getElementById('imageModal').style.display = "none"; 
+    }
+    
+    function escapeHtml(str) {
+        if(!str) return '';
+        return str.replace(/[&<>]/g, function(m) {
+            if(m === '&') return '&amp;';
+            if(m === '<') return '&lt;';
+            if(m === '>') return '&gt;';
+            return m;
+        });
+    }
+    
+    // Drag to scroll feature
+    const scrollWrapper = document.getElementById('scrollWrapper');
+    if(scrollWrapper) {
+        let isDown = false;
+        let startX, scrollLeft;
+        scrollWrapper.addEventListener('mousedown', (e) => { isDown = true; startX = e.pageX - scrollWrapper.offsetLeft; scrollLeft = scrollWrapper.scrollLeft; scrollWrapper.style.cursor = 'grabbing'; });
+        window.addEventListener('mouseup', () => { isDown = false; if(scrollWrapper) scrollWrapper.style.cursor = 'grab'; });
+        window.addEventListener('mousemove', (e) => { if(!isDown) return; e.preventDefault(); const x = e.pageX - scrollWrapper.offsetLeft; const walk = (x - startX) * 1.2; scrollWrapper.scrollLeft = scrollLeft - walk; });
+        scrollWrapper.style.cursor = 'grab';
+    }
+</script>
+</body>
+</html>
