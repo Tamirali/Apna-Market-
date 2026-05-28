@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>दुकानदार एडमिन - अपना मार्केट</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <style>
+        * { box-sizing: border-box; }
+        body { font-family: 'Arial', sans-serif; background: #f0f2f5; padding: 10px; text-align: center; margin: 0; }
+        .card { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); max-width: 550px; margin: auto; }
+        .safety-alert { background: #ff4757; color: white; padding: 12px; font-size: 13px; font-weight: bold; border-radius: 10px; margin-bottom: 15px; }
+        .help-btn { background: #3498db; color: white; padding: 8px 15px; border-radius: 20px; font-size: 12px; border: none; cursor: pointer; margin-bottom: 15px; }
+        
+        input, textarea { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 8px; }
+        .btn { width: 100%; padding: 12px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; color: white; margin: 5px 0; }
+        .btn-save { background: #25D366; }
+        .btn-create { background: #9C27B0; }
+        .btn-copy { background: #075e54; }
+        .btn-qr { background: #FF9800; }
+        
+        .link-box { background: #e8f5e9; padding: 15px; border-radius: 10px; margin: 15px 0; text-align: left; border: 2px solid #25D366; }
+        .link-box h4 { margin: 0 0 10px 0; color: #075e54; }
+        .link-url { background: white; padding: 10px; border-radius: 8px; font-size: 12px; word-break: break-all; margin: 10px 0; border: 1px solid #ddd; }
+        .secret-code { background: #fff3cd; padding: 8px; border-radius: 8px; font-family: monospace; font-size: 18px; font-weight: bold; text-align: center; letter-spacing: 2px; }
+        
+        /* Banner Section */
+        .banner-section { background: #f9f9f9; padding: 15px; border-radius: 10px; margin: 15px 0; }
+        .banner-preview { width: 100%; height: 140px; object-fit: cover; border-radius: 10px; margin: 10px 0; border: 2px dashed #25D366; }
+        .current-banner-text { font-size: 12px; color: #666; margin: 5px 0; }
+        
+        /* QR Code Section */
+        .qr-section { background: #e3f2fd; padding: 15px; border-radius: 10px; margin: 15px 0; text-align: center; }
+        .qr-box { background: white; padding: 15px; border-radius: 10px; display: inline-block; margin: 10px auto; }
+        #qrcode { display: flex; justify-content: center; }
+        .qr-actions { display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap; }
+        .download-qr { background: #25D366; color: white; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 12px; }
+        .print-qr { background: #3498db; color: white; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 12px; }
+        
+        .product-list-container { margin-top: 20px; max-height: 400px; overflow-y: auto; }
+        .p-item { display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #eee; padding: 12px 0; gap: 10px; flex-wrap: wrap; }
+        .p-img { width: 55px; height: 55px; border-radius: 8px; object-fit: cover; }
+        .p-details { flex: 2; min-width: 120px; }
+        .p-name { font-weight: bold; }
+        .p-price { color: #e67e22; }
+        .edit-prod-btn { background: #FF9800; color: white; border: none; padding: 6px 12px; border-radius: 20px; cursor: pointer; }
+        .del-prod-btn { background: #ff4757; color: white; border: none; padding: 6px 12px; border-radius: 20px; cursor: pointer; }
+        
+        .success-msg { background: #25D366; color: white; padding: 8px; border-radius: 8px; margin: 10px 0; display: none; }
+        .error-msg { background: #ff4757; color: white; padding: 8px; border-radius: 8px; margin: 10px 0; display: none; }
+        
+        .shop-info-section { display: none; }
+        .upload-help { font-size: 11px; color: #3498db; margin-top: 5px; display: inline-block; }
+        
+        @media (max-width: 480px) {
+            .qr-actions { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <div class="safety-alert">⚠️ सुरक्षित सिस्टम: दुकान की ID पूरी तरह छिपी हुई है!</div>
+    <button class="help-btn" onclick="showHelp()">❓ मदद / नई दुकान कैसे बनाएं?</button>
+    <h2 style="color:#075e54;">🏪 अपना मार्केट - सुरक्षित एडमिन</h2>
+    
+    <div id="successMsg" class="success-msg"></div>
+    <div id="errorMsg" class="error-msg"></div>
+    
+    <!-- नई दुकान बनाने का सेक्शन -->
+    <div style="background:#e3f2fd; padding:15px; border-radius:10px;">
+        <h3>🌟 नई दुकान बनाएं</h3>
+        <input type="text" id="shopName" placeholder="दुकान का नाम (जैसे: राहुल मोबाइल स्टोर)">
+        <input type="text" id="shopOwnerName" placeholder="दुकानदार का नाम">
+        <input type="number" id="shopWhatsapp" placeholder="दुकानदार का व्हाट्सएप नंबर">
+        <textarea id="shopAddress" placeholder="दुकान का पता"></textarea>
+        <button class="btn btn-create" onclick="createNewShop()">🏪 नई दुकान बनाएं</button>
+    </div>
+    
+    <hr>
+    
+    <!-- एडमिन लॉगिन सेक्शन -->
+    <div style="background:#f9f9f9; padding:15px; border-radius:10px; margin:15px 0;">
+        <h3>🔐 मौजूदा दुकान एडिट करें</h3>
+        <input type="text" id="adminSecretCode" placeholder="अपना एडमिन सीक्रेट कोड डालें">
+        <button class="btn" style="background:#075e54;" onclick="loginWithSecret()">लॉगिन करें</button>
+    </div>
+    
+    <!-- दुकान की जानकारी (लॉगिन के बाद दिखेगी) -->
+    <div id="shopPanel" class="shop-info-section">
+        <!-- Links Box -->
+        <div class="link-box">
+            <h4>🔗 आपका कस्टमर लिंक (ग्राहकों को भेजें)</h4>
+            <div class="link-url" id="customerLinkDisplay">लोड हो रहा...</div>
+            <button class="btn btn-copy" onclick="copyCustomerLink()">📋 कॉपी करें</button>
+            
+            <h4>🔒 आपका एडमिन सीक्रेट कोड (गुप्त रखें!)</h4>
+            <div class="secret-code" id="secretCodeDisplay">***</div>
+            <button class="btn btn-copy" style="background:#FF9800;" onclick="copySecretCode()">🔑 कोड कॉपी करें</button>
+        </div>
+        
+        <!-- ============ BANNER PHOTO UPDATE OPTION ============ -->
+        <div class="banner-section">
+            <h3>🎨 दुकान का बैनर फोटो बदलें</h3>
+            <img id="bannerPreview" class="banner-preview" src="https://via.placeholder.com/500x140?text=Current+Banner">
+            <div class="current-banner-text" id="currentBannerText">कोई बैनर नहीं</div>
+            <input type="text" id="bannerUrlInput" placeholder="बैनर फोटो का Direct Link पेस्ट करें">
+            <a href="https://postimages.org/" target="_blank" class="upload-help">📸 यहाँ से फोटो अपलोड करें (PostImages) - Direct Link लें</a>
+            <button class="btn" style="background:#FF9800;" onclick="updateBanner()">🖼️ बैनर अपडेट करें</button>
+        </div>
+        
+        <!-- ============ QR CODE GENERATE OPTION ============ -->
+        <div class="qr-section">
+            <h3>📱 दुकान का QR कोड बनाएं</h3>
+            <div class="qr-box">
+                <div id="qrcode"></div>
+            </div>
+            <div class="qr-actions">
+                <button class="download-qr" onclick="downloadQR()">💾 QR कोड डाउनलोड करें</button>
+                <button class="print-qr" onclick="printQR()">🖨️ QR कोड प्रिंट करें</button>
+            </div>
+            <p style="font-size:11px; color:#666; margin-top:8px;">इस QR कोड को स्कैन करके ग्राहक सीधा आपकी दुकान पर आ सकते हैं</p>
+        </div>
+        
+        <h3>✏️ दुकान की जानकारी बदलें</h3>
+        <input type="text" id="editShopWhatsapp" placeholder="व्हाट्सएप नंबर">
+        <textarea id="editShopAddress" placeholder="पता"></textarea>
+        <button class="btn" style="background:#25D366;" onclick="updateShopInfo()">💾 जानकारी सेव करें</button>
+        
+        <hr>
+        <h3>➕ नया सामान जोड़ें</h3>
+        <input type="text" id="pName" placeholder="सामान का नाम">
+        <input type="number" id="pPrice" placeholder="कीमत (₹)">
+        <input type="text" id="pLink" placeholder="फोटो का Direct Link">
+        <a href="https://postimages.org/" target="_blank" class="upload-help">📸 फोटो अपलोड करें (PostImages)</a>
+        <button class="btn btn-save" onclick="addProduct()">➕ सामान जोड़ें</button>
+        
+        <div class="product-list-container">
+            <h3>📋 आपके सामान (Edit/Delete)</h3>
+            <div id="productList">कोई सामान नहीं</div>
+        </div>
+        
+        <button class="btn" style="background:#e74c3c; margin-top:15px;" onclick="deleteWholeShop()">🗑️ पूरी दुकान हटाएं</button>
+    </div>
+</div>
+
+<!-- Help Modal -->
+<div id="helpModal" style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:white; padding:20px; border-radius:15px; z-index:1001; width:90%; max-width:350px;">
+    <h3>📖 नई दुकान कैसे बनाएं?</h3>
+    <p>1. दुकान का नाम, मालिक का नाम, व्हाट्सएप नंबर और पता भरें</p>
+    <p>2. "नई दुकान बनाएं" बटन दबाएं</p>
+    <p>3. आपको मिलेगा: कस्टमर लिंक और एडमिन सीक्रेट कोड</p>
+    <p>4. बैनर फोटो और QR कोड भी बना सकते हैं</p>
+    <button class="btn" style="background:#075e54;" onclick="closeHelp()">समझ गया</button>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+
+<script>
+    const firebaseConfig = { apiKey: "AIzaSyBfYd6Cbt6bDmK7Rmh_3RivoHTRl-5AweQ", projectId: "apna-market-61004" };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    let currentShopData = null;
+    let currentSecretCode = null;
+    let currentProducts = [];
+
+    function showMsg(msg, isError = false) {
+        const successDiv = document.getElementById('successMsg');
+        const errorDiv = document.getElementById('errorMsg');
+        if(isError) {
+            errorDiv.innerText = msg;
+            errorDiv.style.display = 'block';
+            setTimeout(() => errorDiv.style.display = 'none', 3000);
+        } else {
+            successDiv.innerText = msg;
+            successDiv.style.display = 'block';
+            setTimeout(() => successDiv.style.display = 'none', 3000);
+        }
+    }
+
+    function showHelp() {
+        document.getElementById('helpModal').style.display = 'block';
+    }
+    function closeHelp() {
+        document.getElementById('helpModal').style.display = 'none';
+    }
+
+    function generateSecretCode() {
+        const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789';
+        let code = '';
+        for(let i = 0; i < 10; i++) {
+            code += chars.charAt(Math.floor(Math.random() * chars.length));
+        }
+        return code;
+    }
+
+    function nameToSlug(name) {
+        return name.toLowerCase()
+            .replace(/[^\u0900-\u097F\w\s]/g, '')
+            .replace(/\s+/g, '-')
+            .replace(/-+/g, '-')
+            .substring(0, 50);
+    }
+
+    async function createNewShop() {
+        const shopName = document.getElementById('shopName').value.trim();
+        const ownerName = document.getElementById('shopOwnerName').value.trim();
+        const whatsapp = document.getElementById('shopWhatsapp').value.trim();
+        const address = document.getElementById('shopAddress').value.trim();
+
+        if(!shopName || !ownerName || !whatsapp) {
+            showMsg("कृपया सभी जानकारी भरें!", true);
+            return;
+        }
+
+        const slug = nameToSlug(shopName);
+        const secretCode = generateSecretCode();
+        
+        const existing = await db.collection('shops').where('slug', '==', slug).get();
+        if(!existing.empty) {
+            showMsg("यह दुकान का नाम पहले से मौजूद है!", true);
+            return;
+        }
+
+        const shopId = 'shop_' + Date.now();
+        
+        await db.collection('shops').doc(shopId).set({
+            shopId: shopId,
+            shopName: shopName,
+            slug: slug,
+            ownerName: ownerName,
+            whatsapp: whatsapp,
+            address: address,
+            secretCode: secretCode,
+            products: [],
+            status: 'active',
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+
+        showMsg("✅ दुकान सफलतापूर्वक बन गई!");
+        
+        document.getElementById('shopName').value = '';
+        document.getElementById('shopOwnerName').value = '';
+        document.getElementById('shopWhatsapp').value = '';
+        document.getElementById('shopAddress').value = '';
+        
+        currentSecretCode = secretCode;
+        await loadShopBySecret(secretCode);
+    }
+
+    async function loginWithSecret() {
+        const secretCode = document.getElementById('adminSecretCode').value.trim();
+        if(!secretCode) {
+            showMsg("कृपया एडमिन सीक्रेट कोड डालें!", true);
+            return;
+        }
+        await loadShopBySecret(secretCode);
+    }
+
+    async function loadShopBySecret(secretCode) {
+        const snapshot = await db.collection('shops').where('secretCode', '==', secretCode).get();
+        
+        if(snapshot.empty) {
+            showMsg("❌ गलत सीक्रेट कोड!", true);
+            return;
+        }
+
+        const doc = snapshot.docs[0];
+        currentShopData = doc.data();
+        currentShopData.docId = doc.id;
+        currentSecretCode = secretCode;
+        
+        document.getElementById('shopPanel').style.display = 'block';
+        document.getElementById('editShopWhatsapp').value = currentShopData.whatsapp || '';
+        document.getElementById('editShopAddress').value = currentShopData.address || '';
+        
+        // Show customer link
+        const baseUrl = window.location.origin + window.location.pathname.replace('admin.html', '');
+        const customerUrl = `${baseUrl}index.html?shop=${currentShopData.slug}`;
+        document.getElementById('customerLinkDisplay').innerHTML = customerUrl;
+        document.getElementById('secretCodeDisplay').innerHTML = currentSecretCode;
+        
+        // Show banner
+        if(currentShopData.bannerUrl) {
+            document.getElementById('bannerPreview').src = currentShopData.bannerUrl;
+            document.getElementById('currentBannerText').innerHTML = '✅ बैनर सेट है';
+        } else {
+            document.getElementById('bannerPreview').src = 'https://via.placeholder.com/500x140?text=No+Banner+Click+Update';
+            document.getElementById('currentBannerText').innerHTML = '❌ कोई बैनर नहीं, ऊपर से सेट करें';
+        }
+        
+        renderProducts(currentShopData.products || []);
+        generateQRCode();
+        showMsg("✅ लॉगिन सफल!");
+        
+        document.getElementById('adminSecretCode').value = '';
+    }
+
+    // ============ BANNER UPDATE FUNCTION ============
+    async function updateBanner() {
+        const bannerUrl = document.getElementById('bannerUrlInput').value.trim();
+        if(!bannerUrl) {
+            showMsg("कृपया बैनर फोटो का Direct Link डालें!", true);
+            return;
+        }
+        
+        await db.collection('shops').doc(currentShopData.docId).update({
+            bannerUrl: bannerUrl
+        });
+        
+        currentShopData.bannerUrl = bannerUrl;
+        document.getElementById('bannerPreview').src = bannerUrl;
+        document.getElementById('currentBannerText').innerHTML = '✅ बैनर अपडेट हो गया';
+        document.getElementById('bannerUrlInput').value = '';
+        showMsg("✅ बैनर फोटो अपडेट हो गया!");
+    }
+
+    // ============ QR CODE GENERATE FUNCTION ============
+    function generateQRCode() {
+        const baseUrl = window.location.origin + window.location.pathname.replace('admin.html', '');
+        const shopUrl = `${baseUrl}index.html?shop=${currentShopData.slug}`;
+        
+        const qrcodeDiv = document.getElementById('qrcode');
+        qrcodeDiv.innerHTML = '';
+        
+        new QRCode(qrcodeDiv, {
+            text: shopUrl,
+            width: 180,
+            height: 180,
+            colorDark: "#075e54",
+            colorLight: "#ffffff",
+            correctLevel: QRCode.CorrectLevel.H
+        });
+    }
+    
+    function downloadQR() {
+        const qrCanvas = document.querySelector('#qrcode canvas');
+        if(qrCanvas) {
+            const link = document.createElement('a');
+            link.download = `${currentShopData.slug}-qrcode.png`;
+            link.href = qrCanvas.toDataURL();
+            link.click();
+            showMsg("✅ QR कोड डाउनलोड हो गया!");
+        } else {
+            showMsg("QR कोड जेनरेट हो रहा है, थोड़ी देर बाद प्रयास करें", true);
+        }
+    }
+    
+    function printQR() {
+        const qrCanvas = document.querySelector('#qrcode canvas');
+        if(qrCanvas) {
+            const win = window.open();
+            win.document.write(`
+                <html>
+                <head>
+                    <title>QR Code - ${currentShopData.shopName}</title>
+                    <style>
+                        body { display: flex; justify-content: center; align-items: center; min-height: 100vh; font-family: Arial; text-align: center; }
+                        .qr-container { text-align: center; }
+                        img { border: 5px solid #075e54; border-radius: 15px; }
+                        h2 { color: #075e54; margin-top: 20px; }
+                        p { color: #666; }
+                    </style>
+                </head>
+                <body>
+                    <div class="qr-container">
+                        <h2>🏪 ${currentShopData.shopName}</h2>
+                        <img src="${qrCanvas.toDataURL()}" width="250" height="250">
+                        <p>इस QR कोड को स्कैन करें और सीधा दुकान पर जाएं</p>
+                        <p>${currentShopData.slug}</p>
+                    </div>
+                    <script>window.print(); setTimeout(() => window.close(), 500);<\/script>
+                </body>
+                </html>
+            `);
+        } else {
+            showMsg("QR कोड जेनरेट हो रहा है, थोड़ी देर बाद प्रयास करें", true);
+        }
+    }
+
+    async function updateShopInfo() {
+        if(!currentShopData) return;
+        
+        const whatsapp = document.getElementById('editShopWhatsapp').value;
+        const address = document.getElementById('editShopAddress').value;
+        
+        await db.collection('shops').doc(currentShopData.docId).update({
+            whatsapp: whatsapp,
+            address: address
+        });
+        
+        currentShopData.whatsapp = whatsapp;
+        currentShopData.address = address;
+        showMsg("✅ दुकान की जानकारी अपडेट हो गई!");
+    }
+
+    async function addProduct() {
+        if(!currentShopData) return;
+        
+        const name = document.getElementById('pName').value;
+        const price = document.getElementById('pPrice').value;
+        const img = document.getElementById('pLink').value;
+        
+        if(!name || !price || !img) {
+            showMsg("सभी फील्ड भरें!", true);
+            return;
+        }
+        
+        const newProduct = {
+            id: Date.now(),
+            name: name,
+            price: parseInt(price),
+            img: img
+        };
+        
+        const updatedProducts = [...(currentShopData.products || []), newProduct];
+        
+        await db.collection('shops').doc(currentShopData.docId).update({
+            products: updatedProducts
+        });
+        
+        currentShopData.products = updatedProducts;
+        renderProducts(updatedProducts);
+        
+        document.getElementById('pName').value = '';
+        document.getElementById('pPrice').value = '';
+        document.getElementById('pLink').value = '';
+        
+        showMsg("✅ सामान जोड़ दिया गया!");
+    }
+
+    function renderProducts(products) {
+        currentProducts = products;
+        const container = document.getElementById('productList');
+        
+        if(!products || products.length === 0) {
+            container.innerHTML = '<p>कोई सामान नहीं है। ऊपर से नया सामान जोड़ें।</p>';
+            return;
+        }
+        
+        let html = '';
+        products.forEach((p, index) => {
+            html += `
+                <div class="p-item">
+                    <img src="${p.img}" class="p-img" onerror="this.src='https://via.placeholder.com/55'">
+                    <div class="p-details">
+                        <div class="p-name">${escapeHtml(p.name)}</div>
+                        <div class="p-price">₹ ${p.price}</div>
+                    </div>
+                    <div>
+                        <button class="edit-prod-btn" onclick="openEditModal(${index})">✏️ Edit</button>
+                        <button class="del-prod-btn" onclick="deleteProduct(${index})">🗑️ Del</button>
+                    </div>
+                </div>
+            `;
+        });
+        container.innerHTML = html;
+    }
+
+    function openEditModal(index) {
+        const product = currentProducts[index];
+        const newName = prompt("नया नाम:", product.name);
+        if(newName) {
+            const newPrice = prompt("नई कीमत:", product.price);
+            if(newPrice) {
+                const newImg = prompt("नया फोटो लिंक:", product.img);
+                if(newImg) {
+                    editProduct(index, newName, parseInt(newPrice), newImg);
+                }
+            }
+        }
+    }
+
+    async function editProduct(index, name, price, img) {
+        const updatedProducts = [...currentProducts];
+        updatedProducts[index] = { ...updatedProducts[index], name, price, img };
+        
+        await db.collection('shops').doc(currentShopData.docId).update({
+            products: updatedProducts
+        });
+        
+        currentShopData.products = updatedProducts;
+        renderProducts(updatedProducts);
+        showMsg("✅ सामान अपडेट हो गया!");
+    }
+
+    async function deleteProduct(index) {
+        if(!confirm("क्या आप यह सामान हटाना चाहते हैं?")) return;
+        
+        const updatedProducts = [...currentProducts];
+        updatedProducts.splice(index, 1);
+        
+        await db.collection('shops').doc(currentShopData.docId).update({
+            products: updatedProducts
+        });
+        
+        currentShopData.products = updatedProducts;
+        renderProducts(updatedProducts);
+        showMsg("✅ सामान हटा दिया गया!");
+    }
+
+    async function deleteWholeShop() {
+        if(!confirm("⚠️ क्या आप पूरी दुकान हटाना चाहते हैं?")) return;
+        
+        const password = prompt("मास्टर पासवर्ड डालें:");
+        if(password !== "tamir@00769") {
+            showMsg("गलत पासवर्ड!", true);
+            return;
+        }
+        
+        await db.collection('shops').doc(currentShopData.docId).delete();
+        showMsg("✅ दुकान हटा दी गई!");
+        
+        document.getElementById('shopPanel').style.display = 'none';
+        currentShopData = null;
+    }
+
+    function copyCustomerLink() {
+        const link = document.getElementById('customerLinkDisplay').innerText;
+        navigator.clipboard.writeText(link);
+        showMsg("📋 कस्टमर लिंक कॉपी हो गया!");
+    }
+
+    function copySecretCode() {
+        const code = document.getElementById('secretCodeDisplay').innerText;
+        navigator.clipboard.writeText(code);
+        showMsg("🔑 सीक्रेट कोड कॉपी हो गया!");
+    }
+
+    function escapeHtml(str) {
+        if(!str) return '';
+        return str.replace(/[&<>]/g, function(m) {
+            if(m === '&') return '&amp;';
+            if(m === '<') return '&lt;';
+            if(m === '>') return '&gt;';
+            return m;
+        });
+    }
+</script>
+</body>
+</html>
