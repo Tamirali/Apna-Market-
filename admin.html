@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>दुकानदार एडमिन - अपना मार्केट</title>
+    <script src="https://cdn.jsdelivr.net/npm/browser-image-compression@2.0.2/dist/browser-image-compression.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <style>
+        * { box-sizing: border-box; }
+        body { font-family: 'Arial', sans-serif; background: #f0f2f5; padding: 10px; text-align: center; margin: 0; }
+        .card { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); max-width: 550px; margin: auto; }
+        .safety-alert { background: #ff4757; color: white; padding: 12px; font-size: 13px; font-weight: bold; border-radius: 10px; margin-bottom: 15px; }
+        .help-btn { background: #3498db; color: white; padding: 8px 15px; border-radius: 20px; font-size: 12px; border: none; cursor: pointer; margin-bottom: 15px; }
+        
+        input, textarea { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 8px; }
+        .btn { width: 100%; padding: 12px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; color: white; margin: 5px 0; }
+        .btn-save { background: #25D366; }
+        .btn-create { background: #9C27B0; }
+        .btn-copy { background: #075e54; }
+        
+        .link-box { background: #e8f5e9; padding: 15px; border-radius: 10px; margin: 15px 0; text-align: left; border: 2px solid #25D366; }
+        .secret-code { background: #fff3cd; padding: 8px; border-radius: 8px; font-family: monospace; font-size: 18px; font-weight: bold; text-align: center; letter-spacing: 2px; }
+        
+        .image-upload-area { background: #f0f8ff; padding: 15px; border-radius: 10px; margin: 10px 0; border: 2px dashed #3498db; }
+        .image-preview { width: 100px; height: 100px; object-fit: cover; border-radius: 10px; margin: 10px auto; display: none; border: 2px solid #25D366; }
+        .compress-status { font-size: 12px; color: #666; margin: 5px 0; }
+        .compress-progress { display: none; width: 100%; height: 4px; background: #ddd; border-radius: 2px; overflow: hidden; }
+        .compress-progress-bar { width: 0%; height: 100%; background: #25D366; transition: width 0.3s; }
+        
+        .banner-preview { width: 100%; height: 140px; object-fit: cover; border-radius: 10px; margin: 10px 0; border: 2px dashed #25D366; }
+        .qr-section { background: #e3f2fd; padding: 15px; border-radius: 10px; margin: 15px 0; text-align: center; }
+        .qr-box { background: white; padding: 15px; border-radius: 10px; display: inline-block; margin: 10px auto; }
+        
+        .product-list-container { margin-top: 20px; max-height: 400px; overflow-y: auto; }
+        .p-item { display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #eee; padding: 12px 0; gap: 10px; }
+        .p-img { width: 55px; height: 55px; border-radius: 8px; object-fit: cover; }
+        .edit-prod-btn { background: #FF9800; color: white; border: none; padding: 6px 12px; border-radius: 20px; cursor: pointer; }
+        .del-prod-btn { background: #ff4757; color: white; border: none; padding: 6px 12px; border-radius: 20px; cursor: pointer; }
+        
+        .success-msg { background: #25D366; color: white; padding: 8px; border-radius: 8px; margin: 10px 0; display: none; }
+        .error-msg { background: #ff4757; color: white; padding: 8px; border-radius: 8px; margin: 10px 0; display: none; }
+        .shop-info-section { display: none; }
+        
+        @media (max-width: 480px) { .card { padding: 15px; } }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <div class="safety-alert">⚠️ सुरक्षित सिस्टम: फोटो अपने आप कंप्रेस हो जाएगी!</div>
+    <h2 style="color:#075e54;">🏪 अपना मार्केट - सुरक्षित एडमिन</h2>
+    
+    <div id="successMsg" class="success-msg"></div>
+    <div id="errorMsg" class="error-msg"></div>
+    
+    <!-- नई दुकान बनाने का सेक्शन -->
+    <div style="background:#e3f2fd; padding:15px; border-radius:10px;">
+        <h3>🌟 नई दुकान बनाएं</h3>
+        <input type="text" id="shopName" placeholder="दुकान का नाम (जैसे: राहुल मोबाइल)">
+        <input type="text" id="shopOwnerName" placeholder="दुकानदार का नाम">
+        <input type="text" id="shopWhatsapp" placeholder="व्हाट्सएप नंबर">
+        <textarea id="shopAddress" placeholder="पता"></textarea>
+        <button class="btn btn-create" onclick="createNewShop()">🏪 नई दुकान बनाएं</button>
+    </div>
+    
+    <hr>
+    
+    <!-- एडमिन लॉगिन सेक्शन -->
+    <div style="background:#f9f9f9; padding:15px; border-radius:10px; margin:15px 0;">
+        <h3>🔐 मौजूदा दुकान एडिट करें</h3>
+        <input type="text" id="adminSecretCode" placeholder="अपना एडमिन सीक्रेट कोड डालें">
+        <button class="btn" style="background:#075e54;" onclick="loginWithSecret()">🔓 लॉगिन करें</button>
+    </div>
+    
+    <!-- दुकान की जानकारी -->
+    <div id="shopPanel" class="shop-info-section">
+        <div class="link-box">
+            <h4>🔗 कस्टमर लिंक</h4>
+            <div style="background:white; padding:10px; border-radius:8px; word-break:break-all;" id="customerLinkDisplay">लोड हो रहा...</div>
+            <button class="btn btn-copy" onclick="copyCustomerLink()">📋 कॉपी करें</button>
+            
+            <h4>🔒 एडमिन सीक्रेट कोड</h4>
+            <div class="secret-code" id="secretCodeDisplay">***</div>
+            <button class="btn btn-copy" style="background:#FF9800;" onclick="copySecretCode()">🔑 कोड कॉपी करें</button>
+        </div>
+        
+        <!-- Banner Section -->
+        <div style="background:#f9f9f9; padding:15px; border-radius:10px; margin:15px 0;">
+            <h3>🎨 दुकान का बैनर</h3>
+            <img id="bannerPreview" class="banner-preview" src="https://via.placeholder.com/500x140?text=No+Banner">
+            <input type="text" id="bannerUrlInput" placeholder="बैनर फोटो का Direct Link">
+            <button class="btn" style="background:#FF9800;" onclick="updateBanner()">🖼️ बैनर सेट करें</button>
+        </div>
+        
+        <!-- QR Code Section -->
+        <div class="qr-section">
+            <h3>📱 दुकान का QR कोड</h3>
+            <div class="qr-box"><div id="qrcode"></div></div>
+            <button class="btn" style="background:#3498db;" onclick="downloadQR()">💾 QR डाउनलोड करें</button>
+        </div>
+        
+        <!-- ============ नया इमेज कंप्रेसर सेक्शन ============ -->
+        <div class="image-upload-area">
+            <h3>📸 फोटो अपलोड करें (अपने आप कंप्रेस होगी)</h3>
+            <p style="font-size:12px; color:#666;">✅ फोटो अपने आप WebP फॉर्मेट में कंप्रेस हो जाएगी (50-80% छोटी)</p>
+            <input type="file" id="imageInput" accept="image/*" onchange="compressAndUpload()">
+            <div class="compress-progress" id="compressProgress">
+                <div class="compress-progress-bar" id="compressBar"></div>
+            </div>
+            <img id="imagePreview" class="image-preview">
+            <div class="compress-status" id="compressStatus"></div>
+            <input type="text" id="compressedUrl" placeholder="कंप्रेस हुई फोटो का लिंक यहाँ आएगा">
+            <button class="btn btn-save" onclick="copyCompressedUrl()">📋 लिंक कॉपी करें</button>
+        </div>
+        
+        <h3>✏️ दुकान की जानकारी</h3>
+        <input type="text" id="editShopWhatsapp" placeholder="व्हाट्सएप नंबर">
+        <textarea id="editShopAddress" placeholder="पता"></textarea>
+        <button class="btn" style="background:#25D366;" onclick="updateShopInfo()">💾 सेव करें</button>
+        
+        <hr>
+        <h3>➕ नया सामान जोड़ें</h3>
+        <input type="text" id="pName" placeholder="सामान का नाम">
+        <input type="number" id="pPrice" placeholder="कीमत (₹)">
+        <input type="text" id="pLink" placeholder="फोटो लिंक (कंप्रेस लिंक यहाँ पेस्ट करें)">
+        <button class="btn btn-save" onclick="addProduct()">➕ सामान जोड़ें</button>
+        
+        <div class="product-list-container">
+            <h3>📋 सामान (Edit/Delete)</h3>
+            <div id="productList">कोई सामान नहीं</div>
+        </div>
+        
+        <button class="btn" style="background:#e74c3c;" onclick="deleteWholeShop()">🗑️ पूरी दुकान हटाएं</button>
+    </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+
+<script>
+    const firebaseConfig = { apiKey: "AIzaSyBfYd6Cbt6bDmK7Rmh_3RivoHTRl-5AweQ", projectId: "apna-market-61004" };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    let currentShopData = null;
+    let currentDocId = null;
+
+    function showMsg(msg, isError = false) {
+        const successDiv = document.getElementById('successMsg');
+        const errorDiv = document.getElementById('errorMsg');
+        successDiv.style.display = 'none';
+        errorDiv.style.display = 'none';
+        if(isError) {
+            errorDiv.innerText = msg;
+            errorDiv.style.display = 'block';
+            setTimeout(() => errorDiv.style.display = 'none', 3000);
+        } else {
+            successDiv.innerText = msg;
+            successDiv.style.display = 'block';
+            setTimeout(() => successDiv.style.display = 'none', 3000);
+        }
+    }
+
+    function generateSecretCode() {
+        const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789';
+        let code = '';
+        for(let i = 0; i < 10; i++) code += chars.charAt(Math.floor(Math.random() * chars.length));
+        return code;
+    }
+
+    function nameToSlug(name) {
+        return name.toLowerCase().replace(/[^\u0900-\u097F\w\s]/g, '').replace(/\s+/g, '-').substring(0, 50);
+    }
+
+    async function createNewShop() {
+        const shopName = document.getElementById('shopName').value.trim();
+        const ownerName = document.getElementById('shopOwnerName').value.trim();
+        const whatsapp = document.getElementById('shopWhatsapp').value.trim();
+        const address = document.getElementById('shopAddress').value.trim();
+
+        if(!shopName || !ownerName || !whatsapp) {
+            showMsg("सभी जानकारी भरें!", true);
+            return;
+        }
+
+        const slug = nameToSlug(shopName);
+        const secretCode = generateSecretCode();
+        
+        const existing = await db.collection('shops').where('slug', '==', slug).get();
+        if(!existing.empty) {
+            showMsg("यह नाम पहले से मौजूद है!", true);
+            return;
+        }
+
+        const shopId = 'shop_' + Date.now();
+        
+        await db.collection('shops').doc(shopId).set({
+            shopId: shopId,
+            shopName: shopName,
+            slug: slug,
+            ownerName: ownerName,
+            whatsapp: whatsapp,
+            address: address,
+            secretCode: secretCode,
+            products: [],
+            status: 'active',
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+
+        showMsg("✅ दुकान बन गई!");
+        document.getElementById('shopName').value = '';
+        document.getElementById('shopOwnerName').value = '';
+        document.getElementById('shopWhatsapp').value = '';
+        document.getElementById('shopAddress').value = '';
+        
+        await loadShopBySecret(secretCode);
+    }
+
+    async function loginWithSecret() {
+        const secretCode = document.getElementById('adminSecretCode').value.trim();
+        if(!secretCode) { showMsg("कोड डालें!", true); return; }
+        await loadShopBySecret(secretCode);
+    }
+
+    async function loadShopBySecret(secretCode) {
+        const snapshot = await db.collection('shops').where('secretCode', '==', secretCode).get();
+        
+        if(snapshot.empty) {
+            showMsg("❌ गलत कोड!", true);
+            return;
+        }
+
+        const doc = snapshot.docs[0];
+        currentShopData = doc.data();
+        currentDocId = doc.id;
+        
+        document.getElementById('shopPanel').style.display = 'block';
+        document.getElementById('editShopWhatsapp').value = currentShopData.whatsapp || '';
+        document.getElementById('editShopAddress').value = currentShopData.address || '';
+        
+        const baseUrl = window.location.origin + window.location.pathname.replace('admin.html', '');
+        const customerUrl = `${baseUrl}index.html?shop=${currentShopData.slug}`;
+        document.getElementById('customerLinkDisplay').innerHTML = customerUrl;
+        document.getElementById('secretCodeDisplay').innerHTML = secretCode;
+        
+        if(currentShopData.bannerUrl) {
+            document.getElementById('bannerPreview').src = currentShopData.bannerUrl;
+        }
+        
+        renderProducts(currentShopData.products || []);
+        generateQRCode();
+        showMsg("✅ लॉगिन सफल!");
+        document.getElementById('adminSecretCode').value = '';
+    }
+
+    // ============ IMAGE COMPRESSION FUNCTION ============
+    async function compressAndUpload() {
+        const fileInput = document.getElementById('imageInput');
+        const file = fileInput.files[0];
+        if(!file) return;
+        
+        const progressDiv = document.getElementById('compressProgress');
+        const progressBar = document.getElementById('compressBar');
+        const statusDiv = document.getElementById('compressStatus');
+        const previewImg = document.getElementById('imagePreview');
+        
+        progressDiv.style.display = 'block';
+        statusDiv.innerHTML = '📸 फोटो कंप्रेस हो रही है...';
+        
+        // Show preview
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            previewImg.src = e.target.result;
+            previewImg.style.display = 'block';
+        };
+        reader.readAsDataURL(file);
+        
+        try {
+            // Compression options
+            const options = {
+                maxSizeMB: 0.2,        // 200KB max
+                maxWidthOrHeight: 800,
+                useWebWorker: true,
+                fileType: 'image/webp',
+                onProgress: (progress) => {
+                    progressBar.style.width = `${progress}%`;
+                    statusDiv.innerHTML = `⏳ कंप्रेस हो रहा है: ${Math.round(progress)}%`;
+                }
+            };
+            
+            const compressedFile = await imageCompression(file, options);
+            statusDiv.innerHTML = `✅ कंप्रेस हो गया! (${(file.size / 1024).toFixed(1)}KB → ${(compressedFile.size / 1024).toFixed(1)}KB)`;
+            
+            // Convert to base64 or upload to free service
+            const compressedReader = new FileReader();
+            compressedReader.onload = async function(e) {
+                const base64 = e.target.result;
+                
+                // Store compressed image as base64 in the input
+                document.getElementById('compressedUrl').value = base64;
+                
+                // Optional: Upload to free CDN (you can replace with your own upload service)
+                statusDiv.innerHTML += `\n✅ लिंक तैयार है! अब "लिंक कॉपी करें" दबाएं।`;
+                progressBar.style.width = '100%';
+            };
+            compressedReader.readAsDataURL(compressedFile);
+            
+        } catch(error) {
+            console.error(error);
+            statusDiv.innerHTML = '❌ कंप्रेस नहीं हो पाया! दूसरी फोटो डालें।';
+            progressDiv.style.display = 'none';
+        }
+    }
+    
+    function copyCompressedUrl() {
+        const url = document.getElementById('compressedUrl').value;
+        if(url) {
+            navigator.clipboard.writeText(url);
+            showMsg("📋 कंप्रेस फोटो का लिंक कॉपी हो गया!");
+        } else {
+            showMsg("पहले फोटो अपलोड करें!", true);
+        }
+    }
+
+    function generateQRCode() {
+        const baseUrl = window.location.origin + window.location.pathname.replace('admin.html', '');
+        const shopUrl = `${baseUrl}index.html?shop=${currentShopData.slug}`;
+        const qrDiv = document.getElementById('qrcode');
+        qrDiv.innerHTML = '';
+        new QRCode(qrDiv, { text: shopUrl, width: 160, height: 160, colorDark: "#075e54", colorLight: "#ffffff" });
+    }
+
+    function downloadQR() {
+        const canvas = document.querySelector('#qrcode canvas');
+        if(canvas) {
+            const link = document.createElement('a');
+            link.download = `${currentShopData.slug}-qrcode.png`;
+            link.href = canvas.toDataURL();
+            link.click();
+            showMsg("✅ QR डाउनलोड हो गया!");
+        }
+    }
+
+    async function updateBanner() {
+        const url = document.getElementById('bannerUrlInput').value.trim();
+        if(!url) { showMsg("URL डालें!", true); return; }
+        await db.collection('shops').doc(currentDocId).update({ bannerUrl: url });
+        currentShopData.bannerUrl = url;
+        document.getElementById('bannerPreview').src = url;
+        document.getElementById('bannerUrlInput').value = '';
+        showMsg("✅ बैनर सेट हो गया!");
+    }
+
+    async function updateShopInfo() {
+        const whatsapp = document.getElementById('editShopWhatsapp').value;
+        const address = document.getElementById('editShopAddress').value;
+        await db.collection('shops').doc(currentDocId).update({ whatsapp, address });
+        currentShopData.whatsapp = whatsapp;
+        currentShopData.address = address;
+        showMsg("✅ जानकारी सेव हो गई!");
+    }
+
+    async function addProduct() {
+        const name = document.getElementById('pName').value.trim();
+        const price = document.getElementById('pPrice').value;
+        const img = document.getElementById('pLink').value.trim();
+        if(!name || !price || !img) { showMsg("सभी भरें!", true); return; }
+        
+        const newProduct = { id: Date.now().toString(), name, price: parseInt(price), img };
+        const updated = [...(currentShopData.products || []), newProduct];
+        await db.collection('shops').doc(currentDocId).update({ products: updated });
+        currentShopData.products = updated;
+        renderProducts(updated);
+        document.getElementById('pName').value = '';
+        document.getElementById('pPrice').value = '';
+        document.getElementById('pLink').value = '';
+        showMsg("✅ सामान जुड़ गया!");
+    }
+
+    function renderProducts(products) {
+        const container = document.getElementById('productList');
+        if(!products.length) {
+            container.innerHTML = '<p>कोई सामान नहीं</p>';
+            return;
+        }
+        let html = '';
+        products.forEach((p, idx) => {
+            html += `
+                <div class="p-item">
+                    <img src="${p.img}" class="p-img" onerror="this.src='https://via.placeholder.com/55'">
+                    <div style="flex:1;"><b>${escapeHtml(p.name)}</b><br>₹${p.price}</div>
+                    <div>
+                        <button class="edit-prod-btn" onclick="editProduct(${idx})">✏️</button>
+                        <button class="del-prod-btn" onclick="deleteProduct(${idx})">🗑️</button>
+                    </div>
+                </div>
+            `;
+        });
+        container.innerHTML = html;
+    }
+
+    function editProduct(index) {
+        const p = currentShopData.products[index];
+        const newName = prompt("नया नाम:", p.name);
+        if(!newName) return;
+        const newPrice = prompt("नई कीमत:", p.price);
+        if(!newPrice) return;
+        const newImg = prompt("नया फोटो लिंक:", p.img);
+        if(!newImg) return;
+        
+        const updated = [...currentShopData.products];
+        updated[index] = { ...updated[index], name: newName, price: parseInt(newPrice), img: newImg };
+        saveProducts(updated);
+    }
+
+    async function deleteProduct(index) {
+        if(!confirm("हटाना है?")) return;
+        const updated = [...currentShopData.products];
+        updated.splice(index, 1);
+        await saveProducts(updated);
+    }
+
+    async function saveProducts(products) {
+        await db.collection('shops').doc(currentDocId).update({ products });
+        currentShopData.products = products;
+        renderProducts(products);
+        showMsg("✅ सेव हो गया!");
+    }
+
+    async function deleteWholeShop() {
+        const pass = prompt("मास्टर पासवर्ड:");
+        if(pass !== "tamir@00769") { showMsg("गलत पासवर्ड!", true); return; }
+        if(confirm("पूरी दुकान हटाएं?")) {
+            await db.collection('shops').doc(currentDocId).delete();
+            alert("दुकान हट गई!");
+            location.reload();
+        }
+    }
+
+    function copyCustomerLink() {
+        const link = document.getElementById('customerLinkDisplay').innerText;
+        navigator.clipboard.writeText(link);
+        showMsg("📋 लिंक कॉपी हो गया!");
+    }
+
+    function copySecretCode() {
+        const code = document.getElementById('secretCodeDisplay').innerText;
+        navigator.clipboard.writeText(code);
+        showMsg("🔑 कोड कॉपी हो गया!");
+    }
+
+    function escapeHtml(str) {
+        if(!str) return '';
+        return str.replace(/[&<>]/g, m => m === '&' ? '&amp;' : m === '<' ? '&lt;' : '&gt;');
+    }
+</script>
+</body>
+</html>
