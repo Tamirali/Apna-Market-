@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>अपना मार्केट - डिजिटल दुकान</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: #f0f2f5; }
+        
+        .shop-banner { width: 100%; height: 160px; object-fit: cover; background: #25D366; }
+        .header { background: linear-gradient(135deg, #075e54, #128C7E); color: white; padding: 15px 20px; text-align: center; }
+        .store-name { font-size: 1.6rem; font-weight: bold; }
+        .store-owner { font-size: 0.8rem; opacity: 0.9; margin-top: 5px; }
+        .info-bar { background: white; padding: 12px; margin: 12px; border-radius: 12px; border-left: 5px solid #25D366; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        
+        /* Admin Toggle Button */
+        .admin-toggle { position: fixed; bottom: 20px; right: 20px; background: #075e54; color: white; width: 55px; height: 55px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.2); z-index: 100; font-size: 24px; border: none; }
+        .home-btn { position: fixed; bottom: 20px; left: 20px; background: #3498db; color: white; width: 55px; height: 55px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.2); z-index: 100; font-size: 24px; border: none; text-decoration: none; }
+        
+        /* Admin Panel */
+        .admin-panel { position: fixed; bottom: 90px; right: 20px; width: 380px; background: white; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); z-index: 99; display: none; max-height: 85vh; overflow-y: auto; }
+        .admin-panel.show { display: block; animation: slideIn 0.3s ease; }
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .admin-header { background: #075e54; color: white; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; }
+        .admin-header h4 { margin: 0; }
+        .close-admin { background: none; border: none; color: white; font-size: 20px; cursor: pointer; }
+        .admin-body { padding: 15px; }
+        .admin-body input, .admin-body textarea { width: 100%; padding: 10px; margin: 8px 0; border: 1px solid #ddd; border-radius: 8px; }
+        .btn { width: 100%; padding: 10px; background: #25D366; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 8px; }
+        .btn-danger { background: #e74c3c; }
+        .btn-warning { background: #FF9800; }
+        .btn-info { background: #3498db; }
+        
+        .secret-input { text-align: center; margin-bottom: 15px; }
+        .secret-input input { text-align: center; font-family: monospace; font-size: 16px; letter-spacing: 1px; }
+        
+        .product-list-admin { max-height: 300px; overflow-y: auto; margin-top: 15px; border-top: 1px solid #eee; }
+        .admin-product-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #eee; }
+        .admin-product-item button { background: none; border: none; cursor: pointer; font-size: 18px; margin-left: 8px; }
+        .edit-prod { color: #FF9800; }
+        .del-prod { color: #e74c3c; }
+        
+        .banner-preview-sm { width: 100%; height: 80px; object-fit: cover; border-radius: 8px; margin: 8px 0; border: 1px solid #ddd; }
+        .qr-box { background: #f9f9f9; padding: 10px; border-radius: 10px; text-align: center; margin: 10px 0; }
+        #qrcode { display: flex; justify-content: center; }
+        
+        /* Products Scroll */
+        .section-title { padding: 0 12px; margin: 15px 0 10px; font-size: 1.3rem; color: #075e54; display: flex; justify-content: space-between; }
+        .scroll-wrapper { overflow-x: auto; white-space: nowrap; padding: 8px 8px 20px; cursor: grab; }
+        .scroll-wrapper::-webkit-scrollbar { height: 6px; }
+        .scroll-wrapper::-webkit-scrollbar-thumb { background: #25D366; border-radius: 10px; }
+        .product-row { display: inline-flex; gap: 16px; padding: 0 8px; }
+        .product-card { width: 240px; background: white; border-radius: 20px; overflow: hidden; box-shadow: 0 5px 15px rgba(0,0,0,0.1); white-space: normal; transition: transform 0.2s; }
+        .product-card:hover { transform: translateY(-3px); }
+        .product-img { width: 100%; height: 180px; object-fit: cover; cursor: pointer; }
+        .product-info { padding: 12px; }
+        .product-name { font-weight: bold; font-size: 14px; margin-bottom: 5px; }
+        .product-price { color: #e67e22; font-weight: bold; font-size: 18px; margin: 5px 0; }
+        
+        /* Product Action Buttons */
+        .product-actions { display: flex; gap: 8px; margin: 10px 0; }
+        .like-btn, .share-btn { flex: 1; padding: 8px; border: none; border-radius: 25px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px; font-size: 13px; transition: 0.2s; }
+        .like-btn { background: #f0f0f0; color: #e74c3c; }
+        .like-btn.liked { background: #e74c3c; color: white; }
+        .share-btn { background: #3498db; color: white; }
+        .share-btn:hover { background: #2980b9; }
+        .like-count { font-size: 11px; margin-left: 3px; }
+        
+        .add-to-cart { background: #25D366; color: white; border: none; padding: 8px; border-radius: 25px; width: 100%; font-weight: bold; cursor: pointer; margin-top: 5px; }
+        
+        /* Cart */
+        .cart-section { position: sticky; bottom: 0; background: white; margin: 12px; padding: 12px 16px; border-radius: 30px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 -5px 20px rgba(0,0,0,0.1); z-index: 90; }
+        .cart-info { background: #25D366; color: white; padding: 5px 12px; border-radius: 25px; }
+        .order-all-btn { background: #075e54; color: white; border: none; padding: 10px 20px; border-radius: 30px; font-weight: bold; cursor: pointer; }
+        
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); justify-content: center; align-items: center; z-index: 1000; }
+        .modal-content { max-width: 90%; max-height: 80%; border-radius: 10px; }
+        .toast { position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%); background: #1e2a3a; color: white; padding: 10px 20px; border-radius: 30px; font-size: 12px; z-index: 200; }
+        
+        .share-modal { position: fixed; bottom: 0; left: 0; right: 0; background: white; border-radius: 20px 20px 0 0; padding: 20px; z-index: 1001; transform: translateY(100%); transition: 0.3s; }
+        .share-modal.show { transform: translateY(0); }
+        .share-option { display: flex; align-items: center; gap: 12px; padding: 12px; border-bottom: 1px solid #eee; cursor: pointer; }
+        .share-option:hover { background: #f5f5f5; }
+        
+        @media (max-width: 480px) {
+            .admin-panel { width: 95%; right: 2.5%; left: 2.5%; bottom: 90px; }
+            .product-card { width: 220px; }
+        }
+    </style>
+</head>
+<body>
+
+<img id="shopBanner" class="shop-banner" src="https://via.placeholder.com/800x160?text=Loading">
+<div class="header">
+    <div class="store-name" id="storeTitle">दुकान लोड हो रही है...</div>
+    <div class="store-owner" id="ownerName"></div>
+</div>
+
+<div class="info-bar">
+    📍 <b>पता:</b> <span id="addrDisp">...</span><br>
+    📞 <b>दुकानदार:</b> <span id="waDisp">...</span>
+</div>
+
+<div class="section-title">
+    🛒 हमारे उत्पाद
+    <span style="font-size:12px;">👈 स्क्रॉल करें 👉</span>
+</div>
+
+<div class="scroll-wrapper" id="scrollWrapper">
+    <div class="product-row" id="productRow"></div>
+</div>
+
+<div class="cart-section" id="cartSection" style="display:none;">
+    <div><span class="cart-info" id="cartCount">0</span> <span id="cartItemsList" style="font-size:12px;"></span></div>
+    <button class="order-all-btn" onclick="orderMultiple()">🛍️ एक साथ ऑर्डर करें</button>
+</div>
+
+<button class="home-btn" onclick="goHome()">🏠</button>
+<button class="admin-toggle" onclick="toggleAdmin()">🔒</button>
+
+<div class="admin-panel" id="adminPanel">
+    <div class="admin-header">
+        <h4>🔐 दुकानदार एडमिन पैनल</h4>
+        <button class="close-admin" onclick="toggleAdmin()">✕</button>
+    </div>
+    <div class="admin-body">
+        <div id="loginSection">
+            <div class="secret-input">
+                <p>अपना सीक्रेट कोड डालें:</p>
+                <input type="password" id="secretCode" placeholder="••••••••••" maxlength="20">
+                <button class="btn" onclick="verifyLogin()">🔓 लॉगिन करें</button>
+            </div>
+            <hr>
+            <p style="font-size:12px; color:#666; text-align:center;">अगर आपके पास कोड नहीं है, <br>मास्टर एडमिन से संपर्क करें</p>
+        </div>
+        
+        <div id="adminContent" style="display:none;">
+            <p style="background:#e8f5e9; padding:8px; border-radius:8px; text-align:center;">✅ एडमिन मोड ऑन</p>
+            
+            <h5>🎨 बैनर बदलें</h5>
+            <img id="adminBannerPreview" class="banner-preview-sm" src="">
+            <input type="text" id="newBanner" placeholder="बैनर फोटो लिंक">
+            <button class="btn btn-info" onclick="updateBanner()">बैनर अपडेट करें</button>
+            
+            <h5>📱 QR कोड</h5>
+            <div class="qr-box">
+                <div id="adminQrcode"></div>
+                <button class="btn btn-info" style="margin-top:5px;" onclick="downloadQR()">💾 QR डाउनलोड करें</button>
+            </div>
+            
+            <h5>➕ नया सामान</h5>
+            <input type="text" id="newName" placeholder="सामान का नाम">
+            <input type="number" id="newPrice" placeholder="कीमत">
+            <input type="text" id="newImg" placeholder="फोटो लिंक">
+            <a href="https://postimages.org/" target="_blank" style="font-size:11px;">📸 फोटो अपलोड करें</a>
+            <button class="btn" onclick="addProduct()">सामान जोड़ें</button>
+            
+            <h5>✏️ सामान Edit/Delete</h5>
+            <div id="adminProductList">लोड हो रहा...</div>
+            
+            <h5>🏪 दुकान जानकारी</h5>
+            <input type="text" id="editWhatsapp" placeholder="व्हाट्सएप नंबर">
+            <textarea id="editAddress" placeholder="पता" rows="2"></textarea>
+            <button class="btn" onclick="updateShopDetails()">जानकारी सेव करें</button>
+            
+            <button class="btn btn-danger" onclick="deleteShop()">🗑️ पूरी दुकान हटाएं</button>
+            <button class="btn" style="background:#95a5a6;" onclick="logout()">🚪 लॉगआउट</button>
+        </div>
+    </div>
+</div>
+
+<div id="zoomModal" class="modal" onclick="closeZoom()">
+    <img class="modal-content" id="zoomImg">
+</div>
+
+<!-- Share Modal -->
+<div id="shareModal" class="share-modal" onclick="event.stopPropagation()">
+    <div style="padding: 10px 0 20px 0; text-align: center; border-bottom: 1px solid #eee;">
+        <h3 style="margin:0;">📤 शेयर करें</h3>
+        <p style="font-size:12px; color:#666;" id="shareProductName"></p>
+    </div>
+    <div class="share-option" onclick="shareOnWhatsApp()">
+        <span style="font-size:24px;">💚</span> <span>WhatsApp पर शेयर करें</span>
+    </div>
+    <div class="share-option" onclick="copyProductLink()">
+        <span style="font-size:24px;">🔗</span> <span>लिंक कॉपी करें</span>
+    </div>
+    <div class="share-option" onclick="shareOnFacebook()">
+        <span style="font-size:24px;">📘</span> <span>Facebook पर शेयर करें</span>
+    </div>
+    <div class="share-option" onclick="shareOnTwitter()">
+        <span style="font-size:24px;">🐦</span> <span>Twitter (X) पर शेयर करें</span>
+    </div>
+    <div class="share-option" onclick="closeShareModal()" style="border-bottom: none;">
+        <span style="font-size:24px;">❌</span> <span>बंद करें</span>
+    </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+
+<script>
+    const firebaseConfig = { apiKey: "AIzaSyBfYd6Cbt6bDmK7Rmh_3RivoHTRl-5AweQ", projectId: "apna-market-61004" };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    let currentShop = null;
+    let currentShopDocId = null;
+    let cart = [];
+    let currentShareProduct = null;
+    
+    // Like counts storage (local)
+    let likeCounts = {};
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const shopSlug = urlParams.get('shop');
+    
+    if(shopSlug) {
+        loadShopBySlug(shopSlug);
+    } else {
+        document.body.innerHTML = '<h2 style="text-align:center; padding:50px;">❌ दुकान नहीं मिली</h2>';
+    }
+
+    async function loadShopBySlug(slug) {
+        const snapshot = await db.collection('shops').where('slug', '==', slug).get();
+        if(snapshot.empty) {
+            document.body.innerHTML = '<h2 style="text-align:center; padding:50px;">❌ दुकान नहीं मिली</h2>';
+            return;
+        }
+        const doc = snapshot.docs[0];
+        currentShop = doc.data();
+        currentShopDocId = doc.id;
+        
+        document.getElementById('storeTitle').innerText = currentShop.shopName || 'दुकान';
+        document.getElementById('ownerName').innerText = currentShop.ownerName ? `द्वारा: ${currentShop.ownerName}` : '';
+        document.getElementById('addrDisp').innerText = currentShop.address || 'उपलब्ध नहीं';
+        document.getElementById('waDisp').innerText = currentShop.whatsapp || 'उपलब्ध नहीं';
+        if(currentShop.bannerUrl) document.getElementById('shopBanner').src = currentShop.bannerUrl;
+        
+        // Load like counts from localStorage
+        const savedLikes = localStorage.getItem(`likes_${currentShopDocId}`);
+        if(savedLikes) {
+            likeCounts = JSON.parse(savedLikes);
+        }
+        
+        renderProducts(currentShop.products || []);
+    }
+
+    function renderProducts(products) {
+        const container = document.getElementById('productRow');
+        if(!products.length) {
+            container.innerHTML = '<div style="padding:40px;">कोई सामान नहीं</div>';
+            return;
+        }
+        let html = '';
+        products.forEach(p => {
+            const isLiked = likeCounts[p.id] || false;
+            const likeCount = likeCounts[`${p.id}_count`] || 0;
+            html += `
+                <div class="product-card">
+                    <img src="${p.img}" class="product-img" onclick="openZoom('${p.img}')" onerror="this.src='https://via.placeholder.com/200'">
+                    <div class="product-info">
+                        <div class="product-name">${escapeHtml(p.name)}</div>
+                        <div class="product-price">₹ ${p.price}</div>
+                        <div class="product-actions">
+                            <button class="like-btn ${isLiked ? 'liked' : ''}" onclick="toggleLike('${p.id}', '${escapeHtml(p.name)}')">
+                                👍 <span class="like-count">${likeCount}</span>
+                            </button>
+                            <button class="share-btn" onclick="openShareModal('${p.id}', '${escapeHtml(p.name)}', ${p.price}, '${p.img}')">
+                                📤 शेयर करें
+                            </button>
+                        </div>
+                        <button class="add-to-cart" onclick="addToCart('${p.id}', '${escapeHtml(p.name)}', ${p.price})">
+                            🛒 + ऑर्डर में जोड़ें
+                        </button>
+                    </div>
+                </div>
+            `;
+        });
+        container.innerHTML = html;
+    }
+
+    // Like Function
+    function toggleLike(productId, productName) {
+        const isLiked = likeCounts[productId] || false;
+        if(isLiked) {
+            likeCounts[productId] = false;
+            likeCounts[`${productId}_count`] = (likeCounts[`${productId}_count`] || 1) - 1;
+            showToast(`👎 "${productName}" से लाइक हटाया`);
+        } else {
+            likeCounts[productId] = true;
+            likeCounts[`${productId}_count`] = (likeCounts[`${productId}_count`] || 0) + 1;
+            showToast(`👍 "${productName}" को लाइक किया`);
+        }
+        localStorage.setItem(`likes_${currentShopDocId}`, JSON.stringify(likeCounts));
+        renderProducts(currentShop.products || []);
+    }
+
+    // Share Functions
+    function openShareModal(productId, name, price, img) {
+        const shopUrl = `${window.location.origin}${window.location.pathname}?shop=${currentShop.slug}`;
+        const productUrl = `${shopUrl}&product=${productId}`;
+        
+        currentShareProduct = {
+            id: productId,
+            name: name,
+            price: price,
+            img: img,
+            shopName: currentShop.shopName,
+            shopUrl: shopUrl,
+            productUrl: productUrl,
+            whatsapp: currentShop.whatsapp,
+            address: currentShop.address
+        };
+        
+        document.getElementById('shareProductName').innerHTML = `${name} - ₹${price}`;
+        document.getElementById('shareModal').classList.add('show');
+    }
+    
+    function closeShareModal() {
+        document.getElementById('shareModal').classList.remove('show');
+    }
+    
+    function getShareMessage() {
+        if(!currentShareProduct) return '';
+        return `*🏪 ${currentShareProduct.shopName}*\n\n📦 *${currentShareProduct.name}*\n💰 कीमत: ₹${currentShareProduct.price}\n📍 पता: ${currentShareProduct.address || 'उपलब्ध नहीं'}\n📞 दुकानदार: ${currentShareProduct.whatsapp || 'उपलब्ध नहीं'}\n\n🛒 ऑर्डर करने के लिए लिंक पर क्लिक करें:\n${currentShareProduct.productUrl}\n\n🔗 दुकान लिंक: ${currentShareProduct.shopUrl}`;
+    }
+    
+    function shareOnWhatsApp() {
+        const message = getShareMessage();
+        const encodedMsg = encodeURIComponent(message);
+        window.open(`https://wa.me/?text=${encodedMsg}`, '_blank');
+        closeShareModal();
+        showToast("✅ WhatsApp पर शेयर हो रहा है");
+    }
+    
+    function copyProductLink() {
+        const link = currentShareProduct.productUrl;
+        navigator.clipboard.writeText(link);
+        closeShareModal();
+        showToast("📋 लिंक कॉपी हो गया!");
+    }
+    
+    function shareOnFacebook() {
+        const url = encodeURIComponent(currentShareProduct.productUrl);
+        window.open(`https://www.facebook.com/sharer/sharer.php?u=${url}`, '_blank');
+        closeShareModal();
+    }
+    
+    function shareOnTwitter() {
+        const text = encodeURIComponent(`${currentShareProduct.name} - ₹${currentShareProduct.price} | ${currentShareProduct.shopName}`);
+        const url = encodeURIComponent(currentShareProduct.productUrl);
+        window.open(`https://twitter.com/intent/tweet?text=${text}&url=${url}`, '_blank');
+        closeShareModal();
+    }
+
+    // Check if product is shared directly
+    const sharedProductId = urlParams.get('product');
+    if(sharedProductId && currentShop) {
+        setTimeout(() => {
+            const product = currentShop.products?.find(p => p.id === sharedProductId);
+            if(product) {
+                showToast(`📦 ${product.name} - ₹${product.price}`);
+            }
+        }, 1000);
+    }
+
+    function addToCart(id, name, price) {
+        if(cart.find(i => i.id === id)) {
+            showToast(`"${name}" पहले से है`);
+            return;
+        }
+        cart.push({ id, name, price });
+        updateCart();
+        showToast(`✅ "${name}" जोड़ा गया`);
+    }
+
+    function updateCart() {
+        const section = document.getElementById('cartSection');
+        if(cart.length > 0) {
+            section.style.display = 'flex';
+            document.getElementById('cartCount').innerText = cart.length;
+            document.getElementById('cartItemsList').innerHTML = cart.map(i => i.name).join(', ').substring(0, 40);
+        } else {
+            section.style.display = 'none';
+        }
+    }
+
+    function orderMultiple() {
+        if(!cart.length) return;
+        let msg = "मैं ये सामान खरीदना चाहता हूँ:\n\n";
+        let total = 0;
+        cart.forEach((i, idx) => { msg += `${idx+1}. ${i.name} - ₹${i.price}\n`; total += i.price; });
+        msg += `\nकुल: ₹${total}\n\nदुकान: ${currentShop.shopName}\nपता: ${currentShop.address}`;
+        window.open(`https://wa.me/91${currentShop.whatsapp}?text=${encodeURIComponent(msg)}`, '_blank');
+        cart = [];
+        updateCart();
+    }
+
+    // Admin Functions
+    function toggleAdmin() {
+        document.getElementById('adminPanel').classList.toggle('show');
+    }
+
+    async function verifyLogin() {
+        const enteredCode = document.getElementById('secretCode').value.trim();
+        if(!enteredCode) { showToast("कोड डालें!"); return; }
+        
+        if(currentShop.secretCode === enteredCode) {
+            document.getElementById('loginSection').style.display = 'none';
+            document.getElementById('adminContent').style.display = 'block';
+            document.getElementById('adminBannerPreview').src = currentShop.bannerUrl || 'https://via.placeholder.com/300x80';
+            document.getElementById('editWhatsapp').value = currentShop.whatsapp || '';
+            document.getElementById('editAddress').value = currentShop.address || '';
+            renderAdminProducts();
+            generateAdminQR();
+            showToast("✅ लॉगिन सफल!");
+        } else {
+            showToast("❌ गलत सीक्रेट कोड!");
+        }
+    }
+
+    function renderAdminProducts() {
+        const container = document.getElementById('adminProductList');
+        const products = currentShop.products || [];
+        if(!products.length) {
+            container.innerHTML = '<p>कोई सामान नहीं</p>';
+            return;
+        }
+        let html = '';
+        products.forEach((p, idx) => {
+            html += `
+                <div class="admin-product-item">
+                    <span>📦 ${escapeHtml(p.name)} - ₹${p.price}</span>
+                    <div>
+                        <button class="edit-prod" onclick="editProductPrompt(${idx})">✏️</button>
+                        <button class="del-prod" onclick="deleteProduct(${idx})">🗑️</button>
+                    </div>
+                </div>
+            `;
+        });
+        container.innerHTML = html;
+    }
+
+    function editProductPrompt(index) {
+        const p = currentShop.products[index];
+        const newName = prompt("नया नाम:", p.name);
+        if(!newName) return;
+        const newPrice = prompt("नई कीमत:", p.price);
+        if(!newPrice) return;
+        const newImg = prompt("नया फोटो लिंक:", p.img);
+        if(!newImg) return;
+        
+        const updated = [...currentShop.products];
+        updated[index] = { ...updated[index], name: newName, price: parseInt(newPrice), img: newImg };
+        saveProducts(updated);
+    }
+
+    async function deleteProduct(index) {
+        if(!confirm("हटाना है?")) return;
+        const updated = [...currentShop.products];
+        updated.splice(index, 1);
+        await saveProducts(updated);
+    }
+
+    async function addProduct() {
+        const name = document.getElementById('newName').value.trim();
+        const price = document.getElementById('newPrice').value;
+        const img = document.getElementById('newImg').value.trim();
+        if(!name || !price || !img) { showToast("सभी भरें!"); return; }
+        
+        const newProduct = { id: Date.now().toString(), name, price: parseInt(price), img };
+        const updated = [...(currentShop.products || []), newProduct];
+        await saveProducts(updated);
+        
+        document.getElementById('newName').value = '';
+        document.getElementById('newPrice').value = '';
+        document.getElementById('newImg').value = '';
+    }
+
+    async function saveProducts(products) {
+        await db.collection('shops').doc(currentShopDocId).update({ products });
+        currentShop.products = products;
+        renderProducts(products);
+        renderAdminProducts();
+        showToast("✅ सेव हो गया!");
+    }
+
+    async function updateBanner() {
+        const url = document.getElementById('newBanner').value.trim();
+        if(!url) { showToast("URL डालें!"); return; }
+        await db.collection('shops').doc(currentShopDocId).update({ bannerUrl: url });
+        currentShop.bannerUrl = url;
+        document.getElementById('shopBanner').src = url;
+        document.getElementById('adminBannerPreview').src = url;
+        document.getElementById('newBanner').value = '';
+        showToast("✅ बैनर बदल गया!");
+    }
+
+    async function updateShopDetails() {
+        const whatsapp = document.getElementById('editWhatsapp').value;
+        const address = document.getElementById('editAddress').value;
+        await db.collection('shops').doc(currentShopDocId).update({ whatsapp, address });
+        currentShop.whatsapp = whatsapp;
+        currentShop.address = address;
+        document.getElementById('waDisp').innerText = whatsapp;
+        document.getElementById('addrDisp').innerText = address;
+        showToast("✅ जानकारी सेव हो गई!");
+    }
+
+    async function deleteShop() {
+        const pass = prompt("मास्टर पासवर्ड डालें:");
+        if(pass !== "tamir@00769") { showToast("गलत पासवर्ड!"); return; }
+        if(confirm("पक्का हटाना है?")) {
+            await db.collection('shops').doc(currentShopDocId).delete();
+            alert("दुकान हट गई!");
+            window.location.href = "master.html";
+        }
+    }
+
+    function generateAdminQR() {
+        const url = `${window.location.origin}${window.location.pathname}?shop=${currentShop.slug}`;
+        const qrDiv = document.getElementById('adminQrcode');
+        qrDiv.innerHTML = '';
+        new QRCode(qrDiv, { text: url, width: 150, height: 150, colorDark: "#075e54", colorLight: "#ffffff" });
+    }
+
+    function downloadQR() {
+        const canvas = document.querySelector('#adminQrcode canvas');
+        if(canvas) {
+            const link = document.createElement('a');
+            link.download = `${currentShop.slug}-qrcode.png`;
+            link.href = canvas.toDataURL();
+            link.click();
+            showToast("QR डाउनलोड हो गया!");
+        }
+    }
+
+    function logout() {
+        document.getElementById('loginSection').style.display = 'block';
+        document.getElementById('adminContent').style.display = 'none';
+        document.getElementById('secretCode').value = '';
+        toggleAdmin();
+        showToast("🔒 लॉगआउट हो गया");
+    }
+
+    function goHome() {
+        window.location.href = "master.html";
+    }
+
+    function openZoom(src) {
+        document.getElementById('zoomImg').src = src;
+        document.getElementById('zoomModal').style.display = 'flex';
+    }
+    function closeZoom() {
+        document.getElementById('zoomModal').style.display = 'none';
+    }
+    function showToast(msg) {
+        let t = document.querySelector('.toast');
+        if(!t) { t = document.createElement('div'); t.className = 'toast'; document.body.appendChild(t); }
+        t.innerText = msg;
+        t.style.opacity = '1';
+        setTimeout(() => t.style.opacity = '0', 2000);
+    }
+    function escapeHtml(str) {
+        if(!str) return '';
+        return str.replace(/[&<>]/g, m => m === '&' ? '&amp;' : m === '<' ? '&lt;' : '&gt;');
+    }
+    
+    // Drag scroll
+    const sw = document.getElementById('scrollWrapper');
+    if(sw) {
+        let down = false, startX, scrollLeft;
+        sw.addEventListener('mousedown', (e) => { down = true; startX = e.pageX - sw.offsetLeft; scrollLeft = sw.scrollLeft; sw.style.cursor = 'grabbing'; });
+        window.addEventListener('mouseup', () => { down = false; if(sw) sw.style.cursor = 'grab'; });
+        window.addEventListener('mousemove', (e) => { if(!down) return; e.preventDefault(); sw.scrollLeft = scrollLeft - ((e.pageX - sw.offsetLeft) - startX) * 1.2; });
+        sw.style.cursor = 'grab';
+    }
+    
+    // Close share modal on outside click
+    document.getElementById('shareModal').addEventListener('click', function(e) {
+        if(e.target === this) closeShareModal();
+    });
+</script>
+</body>
+</html>
