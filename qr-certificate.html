@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>दुकानदार क्यूआर सर्टिफिकेट - अपना मार्केट</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f4f7f6; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 20px; }
+        
+        .certificate-card { background: white; width: 100%; max-width: 420px; border-radius: 25px; box-shadow: 0 15px 35px rgba(0,0,0,0.15); padding: 30px; text-align: center; border: 6px solid #25D366; position: relative; box-sizing: border-box; }
+        
+        .badge { position: absolute; top: -18px; left: 50%; transform: translateX(-50%); background: #25D366; color: white; padding: 6px 25px; border-radius: 25px; font-weight: bold; font-size: 13px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); white-space: nowrap; }
+        
+        .header h1 { color: #075e54; margin: 10px 0 5px 0; font-size: 26px; letter-spacing: 1px; }
+        .header p { color: #666; margin: 0 0 20px 0; font-size: 13px; font-weight: 500; }
+
+        .qr-box { background: #f9f9f9; padding: 20px; border-radius: 20px; border: 1px solid #eee; display: inline-block; margin-bottom: 20px; width: 100%; box-sizing: border-box; }
+        #qrcode { display: flex; justify-content: center; margin-bottom: 15px; }
+        #qrcode img { border: 5px solid white; border-radius: 10px; }
+        
+        .shop-name { font-size: 20px; font-weight: bold; color: #075e54; display: block; margin-top: 10px; }
+        .shop-slug { font-size: 12px; color: #666; word-break: break-all; margin-top: 5px; }
+        .agent-info { font-size: 13px; color: #1565c0; margin-top: 8px; font-weight: bold; }
+
+        .scan-text { font-size: 13px; color: #444; margin: 15px 0; line-height: 1.4; background: #e8f5e9; padding: 10px; border-radius: 10px; }
+        
+        .info-footer { border-top: 2px solid #f0f0f0; padding-top: 20px; margin-top: 10px; text-align: left; }
+        .info-row { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 13px; color: #555; }
+        .info-row strong { color: #222; }
+
+        .print-btn { display: block; width: 100%; background: #075e54; color: white; padding: 12px; text-decoration: none; border-radius: 10px; font-weight: bold; margin-top: 20px; border: none; cursor: pointer; font-size: 16px; transition: 0.3s; }
+        .print-btn:hover { background: #25D366; }
+
+        .loading { text-align: center; padding: 20px; color: #666; }
+        .error { color: #e74c3c; text-align: center; padding: 20px; }
+        
+        .date-info { font-size: 11px; color: #888; margin-top: 10px; }
+        
+        @media print { 
+            .print-btn { display: none; } 
+            body { background: white; padding: 0; } 
+            .certificate-card { box-shadow: none; border: 4px solid #25D366; }
+            .badge { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
+        
+        @media (max-width: 480px) {
+            .certificate-card { padding: 20px; }
+            .shop-name { font-size: 18px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="certificate-card">
+        <div class="badge">✅ सत्यापित डिजिटल दुकान</div>
+        
+        <div class="header">
+            <h1>🏪 अपना मार्केट</h1>
+            <p>डिजिटल मिशन - तामिर अली</p>
+        </div>
+
+        <div class="qr-box">
+            <div id="qrcode"></div>
+            <span class="shop-name" id="displayShopName">लोड हो रहा है...</span>
+            <div class="shop-slug" id="displayShopSlug"></div>
+            <div class="agent-info" id="displayAgent">एजेंट: जाँच जारी है...</div>
+        </div>
+
+        <p class="scan-text">
+            <b>📱 ग्राहक ध्यान दें:</b> इस क्यूआर कोड को स्कैन करें और सीधा दुकानदार के 
+            <b>WhatsApp</b> पर ऑर्डर भेजें। स्कैन करते ही दुकान खुल जाएगी!
+        </p>
+
+        <div class="info-footer">
+            <div class="info-row"><span>📞 व्हाट्सएप नंबर:</span> <strong id="displayWa">...</strong></div>
+            <div class="info-row"><span>📍 पता:</span> <strong id="displayAddress">...</strong></div>
+            <div class="info-row"><span>✅ सत्यापित कर्ता:</span> <strong>तामिर अली</strong></div>
+            <div class="info-row"><span>🆘 हेल्पलाइन:</span> <strong>+91 8797221991</strong></div>
+            <div class="info-row"><span>📅 जारी तिथि:</span> <strong id="issueDate">...</strong></div>
+        </div>
+
+        <button class="print-btn" onclick="window.print()">🖨️ सर्टिफिकेट प्रिंट करें</button>
+        <div class="date-info" id="certFooter">सत्यापित डिजिटल प्रमाण पत्र</div>
+    </div>
+
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+
+<script>
+    // Firebase कॉन्फ़िगरेशन
+    const firebaseConfig = { 
+        apiKey: "AIzaSyBfYd6Cbt6bDmK7Rmh_3RivoHTRl-5AweQ", 
+        projectId: "apna-market-61004" 
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    // URL से Shop Slug प्राप्त करना (नए सिस्टम के अनुसार)
+    const params = new URLSearchParams(window.location.search);
+    const shopId = params.get('id');      // पुराना तरीका (ID से)
+    const shopSlug = params.get('slug');   // नया तरीका (नाम से)
+    const secretCode = params.get('code'); // सीक्रेट कोड से (वैकल्पिक)
+
+    async function generateCertificate() {
+        // अगर slug है तो उससे ढूंढो, वरना ID से
+        if (shopSlug) {
+            await loadBySlug(shopSlug);
+        } else if (shopId) {
+            await loadById(shopId);
+        } else if (secretCode) {
+            await loadBySecretCode(secretCode);
+        } else {
+            document.getElementById('displayShopName').innerText = "❌ दुकान नहीं मिली!";
+            document.getElementById('displayShopSlug').innerText = "सही लिंक का उपयोग करें";
+            document.getElementById('qrcode').innerHTML = '<div style="color:#e74c3c;">त्रुटि</div>';
+        }
+    }
+
+    // नए तरीके से - Slug (दुकान के नाम) से लोड करें
+    async function loadBySlug(slug) {
+        try {
+            const snapshot = await db.collection("shops").where("slug", "==", slug).get();
+            
+            if (!snapshot.empty) {
+                const doc = snapshot.docs[0];
+                const data = doc.data();
+                displayCertificate(data, doc.id);
+            } else {
+                showError("दुकान नहीं मिली! कृपया सही लिंक का उपयोग करें।");
+            }
+        } catch (error) {
+            console.error("Error:", error);
+            showError("सर्वर त्रुटि! कृपया बाद में प्रयास करें।");
+        }
+    }
+
+    // पुराने तरीके से - ID से लोड करें
+    async function loadById(id) {
+        try {
+            const doc = await db.collection("shops").doc(id).get();
+            if (doc.exists) {
+                const data = doc.data();
+                displayCertificate(data, id);
+            } else {
+                showError("दुकान नहीं मिली!");
+            }
+        } catch (error) {
+            console.error("Error:", error);
+            showError("सर्वर त्रुटि!");
+        }
+    }
+
+    // सीक्रेट कोड से लोड करें (एडमिन के लिए)
+    async function loadBySecretCode(code) {
+        try {
+            const snapshot = await db.collection("shops").where("secretCode", "==", code).get();
+            
+            if (!snapshot.empty) {
+                const doc = snapshot.docs[0];
+                const data = doc.data();
+                displayCertificate(data, doc.id);
+            } else {
+                showError("गलत सीक्रेट कोड!");
+            }
+        } catch (error) {
+            console.error("Error:", error);
+            showError("सर्वर त्रुटि!");
+        }
+    }
+
+    function displayCertificate(data, docId) {
+        // दुकान का लिंक बनाएं - नए सिस्टम के अनुसार
+        let shopUrl;
+        if (data.slug) {
+            // नया तरीका - दुकान के नाम से
+            shopUrl = `https://tamirali.github.io/Apna-Market-/index.html?shop=${data.slug}`;
+        } else {
+            // पुराना तरीका - ID से (बैकवर्ड कम्पैटिबिलिटी)
+            shopUrl = `https://tamirali.github.io/Apna-Market-/index.html?id=${docId}`;
+        }
+        
+        // पुराने QR कोड को हटाएं
+        const qrcodeDiv = document.getElementById("qrcode");
+        qrcodeDiv.innerHTML = "";
+        
+        // नया QR कोड बनाएं
+        try {
+            new QRCode(qrcodeDiv, {
+                text: shopUrl,
+                width: 160,
+                height: 160,
+                colorDark: "#075e54",
+                colorLight: "#ffffff",
+                correctLevel: QRCode.CorrectLevel.H
+            });
+        } catch(e) {
+            qrcodeDiv.innerHTML = `<div style="color:#e74c3c;">QR कोड जेनरेट नहीं हुआ</div>`;
+        }
+
+        // दुकान का नाम दिखाएं
+        const shopName = data.shopName || data.shopId || docId;
+        document.getElementById('displayShopName').innerHTML = `🏪 ${escapeHtml(shopName)}`;
+        
+        // Slug दिखाएं (अगर है तो)
+        if (data.slug) {
+            document.getElementById('displayShopSlug').innerHTML = `🔗 दुकान लिंक: ${data.slug}`;
+        } else {
+            document.getElementById('displayShopSlug').innerHTML = `🔗 दुकान ID: ${docId}`;
+        }
+        
+        // एजेंट की जानकारी
+        const agentName = data.agentName || data.ownerName || 'अधिकृत दुकानदार';
+        document.getElementById('displayAgent').innerHTML = `👤 एजेंट/मालिक: ${escapeHtml(agentName)}`;
+        
+        // व्हाट्सएप नंबर
+        document.getElementById('displayWa').innerHTML = data.whatsapp || "उपलब्ध नहीं";
+        
+        // पता
+        document.getElementById('displayAddress').innerHTML = data.address || "उपलब्ध नहीं";
+        
+        // जारी तिथि
+        const issueDate = new Date();
+        document.getElementById('issueDate').innerHTML = issueDate.toLocaleDateString('hi-IN');
+        
+        // सर्टिफिकेट फुटर में तारीख
+        document.getElementById('certFooter').innerHTML = `📅 सत्यापित: ${issueDate.toLocaleDateString('hi-IN')} | डिजिटल प्रमाण पत्र`;
+        
+        // अगर दुकान बंद है तो वार्निंग दिखाएं
+        if (data.status === 'inactive') {
+            const scanText = document.querySelector('.scan-text');
+            scanText.style.background = '#ffebee';
+            scanText.style.border = '1px solid #e74c3c';
+            scanText.innerHTML = '<b>⚠️ ध्यान दें:</b> यह दुकान वर्तमान में <b>बंद</b> है। जल्द ही फिर से खुलेगी।';
+        }
+    }
+
+    function showError(message) {
+        document.getElementById('displayShopName').innerHTML = "❌ त्रुटि";
+        document.getElementById('displayShopSlug').innerHTML = message;
+        document.getElementById('displayAgent').innerHTML = "कृपया सही लिंक का उपयोग करें";
+        document.getElementById('displayWa').innerHTML = "---";
+        document.getElementById('displayAddress').innerHTML = "---";
+        document.getElementById('qrcode').innerHTML = `<div style="color:#e74c3c; padding:20px;">${message}</div>`;
+    }
+
+    function escapeHtml(str) {
+        if(!str) return '';
+        return str.replace(/[&<>]/g, function(m) {
+            if(m === '&') return '&amp;';
+            if(m === '<') return '&lt;';
+            if(m === '>') return '&gt;';
+            return m;
+        });
+    }
+
+    // सर्टिफिकेट जेनरेट करें
+    generateCertificate();
+</script>
+
+</body>
+</html>
