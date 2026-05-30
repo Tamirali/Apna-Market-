@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title id="pageTitle">अपना मार्केट - डिजिटल दुकान</title>
+    
+    <meta property="og:title" content="अपना मार्केट" id="ogTitle">
+    <meta property="og:description" content="ऑनलाइन दुकान - घर बैठे ऑर्डर करें" id="ogDesc">
+    <meta property="og:image" content="https://via.placeholder.com/300x200?text=Shop" id="ogImage">
+    <meta property="og:url" content="" id="ogUrl">
+    <meta property="og:type" content="website">
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: #f0f2f5; }
+        .shop-banner { width: 100%; height: 160px; object-fit: cover; background: #25D366; }
+        .header { background: linear-gradient(135deg, #075e54, #128C7E); color: white; padding: 15px 20px; text-align: center; }
+        .store-name { font-size: 1.6rem; font-weight: bold; }
+        .store-owner { font-size: 0.8rem; opacity: 0.9; margin-top: 5px; }
+        .info-bar { background: white; padding: 12px; margin: 12px; border-radius: 12px; border-left: 5px solid #25D366; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; }
+        .search-bar { margin: 0 12px; position: relative; }
+        .search-bar input { width: 100%; padding: 12px 40px 12px 15px; border: 2px solid #ddd; border-radius: 30px; font-size: 14px; }
+        .search-bar button { position: absolute; right: 5px; top: 5px; background: #25D366; border: none; border-radius: 30px; padding: 7px 15px; color: white; cursor: pointer; }
+        .scroll-wrapper { overflow-x: auto; white-space: nowrap; padding: 8px 8px 20px; }
+        .product-row { display: inline-flex; gap: 16px; padding: 0 8px; }
+        .product-card { width: 240px; background: white; border-radius: 20px; overflow: hidden; box-shadow: 0 5px 15px rgba(0,0,0,0.1); white-space: normal; }
+        .product-img { width: 100%; height: 180px; object-fit: cover; cursor: pointer; }
+        .product-info { padding: 12px; }
+        .product-name { font-weight: bold; font-size: 14px; height: 38px; overflow: hidden; }
+        .product-price { color: #e67e22; font-weight: bold; font-size: 18px; margin: 5px 0; }
+        .product-actions { display: flex; gap: 8px; margin: 10px 0; }
+        .like-btn, .share-btn { flex: 1; padding: 8px; border: none; border-radius: 25px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px; font-size: 13px; }
+        .like-btn { background: #f0f0f0; color: #e74c3c; }
+        .like-btn.liked { background: #e74c3c; color: white; }
+        .share-btn { background: #3498db; color: white; }
+        .add-to-cart { background: #25D366; color: white; border: none; padding: 8px; border-radius: 25px; width: 100%; font-weight: bold; cursor: pointer; }
+        .cart-section { position: sticky; bottom: 0; background: white; margin: 12px; padding: 12px 16px; border-radius: 30px; display: flex; justify-content: space-between; align-items: center; z-index: 90; box-shadow: 0 -5px 20px rgba(0,0,0,0.1); }
+        .cart-info { background: #25D366; color: white; padding: 5px 12px; border-radius: 25px; font-weight: bold; }
+        .order-all-btn { background: #075e54; color: white; border: none; padding: 10px 20px; border-radius: 30px; font-weight: bold; cursor: pointer; }
+        .toast { position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%); background: #1e2a3a; color: white; padding: 10px 20px; border-radius: 30px; font-size: 13px; z-index: 200; opacity: 0; transition: opacity 0.3s; pointer-events: none; }
+        .no-products { text-align: center; padding: 40px; color: #999; width: 100%; }
+        .share-modal { position: fixed; bottom: 0; left: 0; right: 0; background: white; border-radius: 20px 20px 0 0; padding: 20px; z-index: 1001; transform: translateY(100%); transition: 0.3s; box-shadow: 0 -5px 15px rgba(0,0,0,0.1); }
+        .share-modal.show { transform: translateY(0); }
+        .share-option { display: flex; align-items: center; gap: 12px; padding: 12px; border-bottom: 1px solid #eee; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+<img id="shopBanner" class="shop-banner" src="https://via.placeholder.com/800x160?text=Loading...">
+<div class="header">
+    <div class="store-name" id="storeTitle">दुकान लोड हो रही है...</div>
+    <div class="store-owner" id="ownerName"></div>
+</div>
+
+<div class="info-bar">
+    <div>📍 <b>पता:</b> <span id="addrDisp">...</span></div>
+    <div>📞 <b>दुकानदार WhatsApp:</b> <span id="waDisp">...</span></div>
+</div>
+
+<div class="search-bar">
+    <input type="text" id="searchInput" placeholder="🔍 सामान खोजें..." onkeyup="searchProducts()">
+</div>
+
+<div style="padding: 15px 12px 5px; font-weight: bold; color: #075e54;">🛒 हमारे उत्पाद:</div>
+<div class="scroll-wrapper">
+    <div class="product-row" id="productRow"></div>
+</div>
+
+<div class="cart-section" id="cartSection" style="display:none;">
+    <div>
+        <span class="cart-info" id="cartCount">0</span>
+        <span id="cartItemsList" style="font-size:12px; margin-left:8px; color: #555;"></span>
+    </div>
+    <button class="order-all-btn" onclick="orderMultiple()">🛍️ व्हाट्सएप ऑर्डर करें</button>
+</div>
+
+<div id="shareModal" class="share-modal">
+    <div style="padding: 10px 0; text-align: center; border-bottom: 1px solid #eee;">
+        <h3>📤 शेयर करें</h3>
+        <p style="font-size:13px; color:#666;" id="shareProductName"></p>
+    </div>
+    <div class="share-option" onclick="shareOnWhatsApp()"><span>💚</span> WhatsApp पर भेजें</div>
+    <div class="share-option" onclick="copyProductLink()"><span>🔗</span> लिंक कॉपी करें</div>
+    <div class="share-option" onclick="closeShareModal()"><span>❌</span> बंद करें</div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+
+<script>
+    const firebaseConfig = { apiKey: "AIzaSyBfYd6Cbt6bDmK7Rmh_3RivoHTRl-5AweQ", projectId: "apna-market-61004" };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    let currentShop = null, currentDocId = null, cart = [], currentShareProduct = null, likeCounts = {}, allProducts = [];
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const shopSlug = urlParams.get('shop');
+
+    if(shopSlug) { loadShopBySlug(shopSlug); }
+    else { document.body.innerHTML = '<h2 style="text-align:center; padding:50px; color:#e74c3c;">❌ लिंक अधूरा है! कृपया सही दुकान लिंक से आएं।</h2>'; }
+
+    async function loadShopBySlug(slug) {
+        try {
+            const snapshot = await db.collection('shops').where('slug', '==', slug).get();
+            if(snapshot.empty) { document.body.innerHTML = '<h2 style="text-align:center; padding:50px; color:#e74c3c;">❌ दुकान नहीं मिली!</h2>'; return; }
+            
+            const doc = snapshot.docs[0];
+            currentShop = doc.data();
+            currentDocId = doc.id;
+            
+            if(currentShop.status === 'inactive') {
+                document.body.innerHTML = `<h2 style="text-align:center; padding:50px; color:#e74c3c;">⚠️ यह दुकान (${escapeHtml(currentShop.shopName)}) अस्थाई रूप से बंद है।</h2>`;
+                return;
+            }
+
+            allProducts = currentShop.products || [];
+            document.getElementById('storeTitle').innerText = currentShop.shopName;
+            document.getElementById('ownerName').innerText = `संचालक: ${currentShop.ownerName}`;
+            document.getElementById('addrDisp').innerText = currentShop.address || 'उपलब्ध नहीं';
+            document.getElementById('waDisp').innerText = currentShop.whatsapp;
+            if(currentShop.bannerUrl) document.getElementById('shopBanner').src = currentShop.bannerUrl;
+            
+            const savedLikes = localStorage.getItem(`likes_${currentDocId}`);
+            if(savedLikes) likeCounts = JSON.parse(savedLikes);
+            
+            renderProducts(allProducts);
+        } catch(e) { console.error(e); }
+    }
+
+    function renderProducts(products) {
+        const container = document.getElementById('productRow');
+        if(!products.length) { container.innerHTML = '<div class="no-products">कोई सामान उपलब्ध नहीं है।</div>'; return; }
+        
+        let html = '';
+        products.forEach(p => {
+            const isLiked = likeCounts[p.id] || false;
+            html += `
+                <div class="product-card">
+                    <img src="${p.img}" class="product-img" onerror="this.src='https://via.placeholder.com/200?text=Product'">
+                    <div class="product-info">
+                        <div class="product-name">${escapeHtml(p.name)}</div>
+                        <div class="product-price">₹${p.price}</div>
+                        <div class="product-actions">
+                            <button class="like-btn ${isLiked ? 'liked' : ''}" onclick="toggleLike('${p.id}')">👍 पसंद</button>
+                            <button class="share-btn" onclick="openShareModal('${p.id}', '${escapeHtml(p.name)}', ${p.price})">📤 शेयर</button>
+                        </div>
+                        <button class="add-to-cart" onclick="addToCart('${p.id}', '${escapeHtml(p.name)}', ${p.price})">🛒 ऑर्डर सूची में जोड़ें</button>
+                    </div>
+                </div>
+            `;
+        });
+        container.innerHTML = html;
+    }
+
+    function searchProducts() {
+        const term = document.getElementById('searchInput').value.toLowerCase();
+        const filtered = allProducts.filter(p => p.name.toLowerCase().includes(term));
+        renderProducts(filtered);
+    }
+
+    function toggleLike(id) {
+        likeCounts[id] = !likeCounts[id];
+        localStorage.setItem(`likes_${currentDocId}`, JSON.stringify(likeCounts));
+        showToast(likeCounts[id] ? "❤️ पसंद सूची में जोड़ा गया" : "💔 पसंद सूची से हटाया गया");
+        renderProducts(allProducts);
+    }
+
+    function openShareModal(id, name, price) {
+        const productUrl = `${window.location.origin}${window.location.pathname}?shop=${currentShop.slug}`;
+        currentShareProduct = { name, price, url: productUrl };
+        document.getElementById('shareProductName').innerText = `${name} - ₹${price}`;
+        document.getElementById('shareModal').classList.add('show');
+    }
+    
+    function closeShareModal() { document.getElementById('shareModal').classList.remove('show'); }
+    
+    function shareOnWhatsApp() {
+        let msg = `*🏪 दुकान:* ${currentShop.shopName}\n*📦 सामान:* ${currentShareProduct.name}\n*💰 कीमत:* ₹${currentShareProduct.price}\n\nपूरी दुकान देखें:\n${currentShareProduct.url}`;
+        window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
+        closeShareModal();
+    }
+
+    function copyProductLink() {
+        navigator.clipboard.writeText(currentShareProduct.url);
+        closeShareModal();
+        showToast("📋 दुकान का लिंक कॉपी हो गया!");
+    }
+
+    function addToCart(id, name, price) {
+        if(cart.find(item => item.id === id)) { showToast("यह पहले से आपकी सूची में है!"); return; }
+        cart.push({ id, name, price });
+        updateCart();
+        showToast("✅ सामान सूची में जुड़ गया");
+    }
+
+    function updateCart() {
+        const section = document.getElementById('cartSection');
+        if(cart.length) {
+            section.style.display = 'flex';
+            document.getElementById('cartCount').innerText = cart.length;
+            document.getElementById('cartItemsList').innerText = cart.map(i => i.name).join(', ').substring(0, 30) + '...';
+        } else { section.style.display = 'none'; }
+    }
+
+    function orderMultiple() {
+        let msg = `नमस्ते ${currentShop.shopName}, मैं आपकी डिजिटल दुकान से ये सामान ऑर्डर करना चाहता हूँ:\n\n`;
+        let total = 0;
+        cart.forEach((item, idx) => { msg += `${idx+1}. ${item.name} - ₹${item.price}\n`; total += item.price; });
+        msg += `\n*कुल कीमत:* ₹${total}\n\nकृपया आर्डर की पुष्टि करें।`;
+        window.open(`https://wa.me/91${currentShop.whatsapp}?text=${encodeURIComponent(msg)}`, '_blank');
+        cart = []; updateCart();
+    }
+
+    function showToast(msg) {
+        let t = document.querySelector('.toast');
+        if(!t) { t = document.createElement('div'); t.className = 'toast'; document.body.appendChild(t); }
+        t.innerText = msg; t.style.opacity = '1';
+        setTimeout(() => t.style.opacity = '0', 2000);
+    }
+
+    function escapeHtml(str) {
+        if(!str) return '';
+        return str.replace(/[&<>]/g, m => m === '&' ? '&amp;' : m === '<' ? '&lt;' : '&gt;');
+    }
+</script>
+</body>
+</html>
