@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>दुकानदार एडमिन</title>
+    <style>
+        body { font-family: Arial; background: #f0f2f5; padding: 20px; text-align: center; }
+        .card { background: white; max-width: 500px; margin: auto; padding: 20px; border-radius: 15px; }
+        input, textarea { width: 100%; padding: 10px; margin: 8px 0; border: 1px solid #ddd; border-radius: 8px; }
+        button { background: #25D366; color: white; padding: 12px; border: none; border-radius: 8px; width: 100%; font-size: 16px; cursor: pointer; margin-top: 10px; }
+        .success { background: #25D366; color: white; padding: 10px; margin: 10px 0; border-radius: 8px; display: none; }
+        .error { background: #ff4757; color: white; padding: 10px; margin: 10px 0; border-radius: 8px; display: none; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h2>🏪 नई दुकान बनाएं</h2>
+    
+    <div id="successMsg" class="success"></div>
+    <div id="errorMsg" class="error"></div>
+    
+    <input type="text" id="shopName" placeholder="दुकान का नाम">
+    <input type="text" id="ownerName" placeholder="दुकानदार का नाम">
+    <input type="text" id="whatsapp" placeholder="व्हाट्सएप नंबर">
+    <textarea id="address" placeholder="पता"></textarea>
+    
+    <button onclick="createShop()">✅ दुकान बनाएं</button>
+    
+    <hr>
+    <h3>🔐 दुकान एडिट करें</h3>
+    <input type="text" id="secretCode" placeholder="सीक्रेट कोड डालें">
+    <button onclick="login()">🔓 लॉगिन करें</button>
+    
+    <div id="editPanel" style="display:none; margin-top:20px;">
+        <hr>
+        <h3>✏️ दुकान एडिट करें</h3>
+        <input type="text" id="editName" placeholder="नया सामान">
+        <input type="number" id="editPrice" placeholder="कीमत">
+        <input type="text" id="editImg" placeholder="फोटो लिंक">
+        <button onclick="addProduct()">➕ सामान जोड़ें</button>
+        <div id="productList" style="margin-top:20px;"></div>
+        <button onclick="logout()" style="background:#999;">🚪 लॉगआउट</button>
+    </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+
+<script>
+    const firebaseConfig = {
+        apiKey: "AIzaSyBfYd6Cbt6bDmK7Rmh_3RivoHTRl-5AweQ",
+        projectId: "apna-market-61004"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    let currentShopId = null;
+    let currentShopData = null;
+
+    function showMsg(msg, isError) {
+        let s = document.getElementById('successMsg');
+        let e = document.getElementById('errorMsg');
+        s.style.display = 'none';
+        e.style.display = 'none';
+        if(isError) {
+            e.innerText = msg;
+            e.style.display = 'block';
+        } else {
+            s.innerText = msg;
+            s.style.display = 'block';
+        }
+        setTimeout(() => {
+            s.style.display = 'none';
+            e.style.display = 'none';
+        }, 3000);
+    }
+
+    function generateSecretCode() {
+        let chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789';
+        let code = '';
+        for(let i = 0; i < 10; i++) {
+            code += chars[Math.floor(Math.random() * chars.length)];
+        }
+        return code;
+    }
+
+    function makeSlug(name) {
+        return name.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-');
+    }
+
+    async function createShop() {
+        let name = document.getElementById('shopName').value.trim();
+        let owner = document.getElementById('ownerName').value.trim();
+        let wa = document.getElementById('whatsapp').value.trim();
+        let addr = document.getElementById('address').value.trim();
+
+        if(!name || !owner || !wa) {
+            showMsg("सभी जानकारी भरें!", true);
+            return;
+        }
+
+        let slug = makeSlug(name);
+        let secret = generateSecretCode();
+        let shopId = 'shop_' + Date.now();
+
+        try {
+            await db.collection('shops').doc(shopId).set({
+                shopId: shopId,
+                shopName: name,
+                slug: slug,
+                ownerName: owner,
+                whatsapp: wa,
+                address: addr,
+                secretCode: secret,
+                products: [],
+                status: 'active',
+                createdAt: new Date()
+            });
+
+            showMsg("✅ दुकान बन गई! आपका सीक्रेट कोड: " + secret, false);
+            
+            // Clear form
+            document.getElementById('shopName').value = '';
+            document.getElementById('ownerName').value = '';
+            document.getElementById('whatsapp').value = '';
+            document.getElementById('address').value = '';
+            
+        } catch(e) {
+            showMsg("Error: " + e.message, true);
+        }
+    }
+
+    async function login() {
+        let code = document.getElementById('secretCode').value.trim();
+        if(!code) {
+            showMsg("कोड डालें!", true);
+            return;
+        }
+
+        let snapshot = await db.collection('shops').where('secretCode', '==', code).get();
+        if(snapshot.empty) {
+            showMsg("गलत कोड!", true);
+            return;
+        }
+
+        let doc = snapshot.docs[0];
+        currentShopId = doc.id;
+        currentShopData = doc.data();
+
+        document.getElementById('editPanel').style.display = 'block';
+        showMsg("✅ लॉगिन सफल!", false);
+        renderProducts(currentShopData.products || []);
+    }
+
+    function renderProducts(products) {
+        let div = document.getElementById('productList');
+        if(!products || products.length === 0) {
+            div.innerHTML = '<p>कोई सामान नहीं</p>';
+            return;
+        }
+
+        let html = '';
+        products.forEach((p, idx) => {
+            html += `
+                <div style="border-bottom:1px solid #eee; padding:10px; display:flex; justify-content:space-between; align-items:center;">
+                    <div>
+                        <b>${escapeHtml(p.name)}</b><br>
+                        ₹${p.price}
+                    </div>
+                    <div>
+                        <button onclick="editProduct(${idx})" style="background:#FF9800; padding:5px 10px; margin:0 5px;">✏️</button>
+                        <button onclick="deleteProduct(${idx})" style="background:#e74c3c; padding:5px 10px;">🗑️</button>
+                    </div>
+                </div>
+            `;
+        });
+        div.innerHTML = html;
+    }
+
+    async function addProduct() {
+        let name = document.getElementById('editName').value.trim();
+        let price = document.getElementById('editPrice').value;
+        let img = document.getElementById('editImg').value.trim();
+
+        if(!name || !price || !img) {
+            showMsg("सभी भरें!", true);
+            return;
+        }
+
+        let newProduct = {
+            id: Date.now().toString(),
+            name: name,
+            price: parseInt(price),
+            img: img
+        };
+
+        let products = [...(currentShopData.products || []), newProduct];
+        await db.collection('shops').doc(currentShopId).update({ products: products });
+        currentShopData.products = products;
+        renderProducts(products);
+
+        document.getElementById('editName').value = '';
+        document.getElementById('editPrice').value = '';
+        document.getElementById('editImg').value = '';
+        showMsg("✅ सामान जुड़ गया!", false);
+    }
+
+    async function editProduct(index) {
+        let p = currentShopData.products[index];
+        let newName = prompt("नया नाम:", p.name);
+        if(!newName) return;
+        let newPrice = prompt("नई कीमत:", p.price);
+        if(!newPrice) return;
+        let newImg = prompt("नया फोटो लिंक:", p.img);
+        if(!newImg) return;
+
+        let products = [...currentShopData.products];
+        products[index] = { ...products[index], name: newName, price: parseInt(newPrice), img: newImg };
+        await db.collection('shops').doc(currentShopId).update({ products: products });
+        currentShopData.products = products;
+        renderProducts(products);
+        showMsg("✅ सामान अपडेट!", false);
+    }
+
+    async function deleteProduct(index) {
+        if(!confirm("हटाना है?")) return;
+        let products = [...currentShopData.products];
+        products.splice(index, 1);
+        await db.collection('shops').doc(currentShopId).update({ products: products });
+        currentShopData.products = products;
+        renderProducts(products);
+        showMsg("✅ सामान हटा!", false);
+    }
+
+    function logout() {
+        document.getElementById('editPanel').style.display = 'none';
+        document.getElementById('secretCode').value = '';
+        currentShopId = null;
+        currentShopData = null;
+        showMsg("🔒 लॉगआउट!", false);
+    }
+
+    function escapeHtml(str) {
+        if(!str) return '';
+        return str.replace(/[&<>]/g, m => m === '&' ? '&amp;' : m === '<' ? '&lt;' : '&gt;');
+    }
+</script>
+</body>
+</html>
