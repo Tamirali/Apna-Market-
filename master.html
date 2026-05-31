@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>मास्टर डैशबोर्ड - अपना मार्केट</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: #121212; color: white; padding: 15px; }
+        .header { background: #1e1e1e; padding: 20px; text-align: center; border-bottom: 3px solid #25D366; }
+        .header h2 { color: #25D366; margin-bottom: 5px; }
+        .system-switch-box { background: #1e272e; padding: 15px; border-radius: 12px; margin: 15px 0; border: 2px solid #3d4e5f; text-align: center; display: flex; align-items: center; justify-content: center; gap: 20px; flex-wrap: wrap; }
+        .switch-label { font-size: 16px; font-weight: bold; color: #fff; }
+        .control-btn { padding: 10px 25px; font-size: 14px; font-weight: bold; border-radius: 30px; border: none; cursor: pointer; color: white; transition: 0.3s; }
+        .btn-system-on { background: #2ecc71; box-shadow: 0 0 10px #2ecc71; }
+        .btn-system-off { background: #e74c3c; box-shadow: 0 0 10px #e74c3c; }
+        .system-status-indicator { font-weight: bold; padding: 5px 15px; border-radius: 20px; font-size: 13px; }
+        .indicator-on { background: rgba(46, 204, 113, 0.2); color: #2ecc71; border: 1px solid #2ecc71; }
+        .indicator-off { background: rgba(231, 76, 60, 0.2); color: #e74c3c; border: 1px solid #e74c3c; }
+        .stats-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin: 20px 0; }
+        .stat-card { background: #1e272e; padding: 15px; border-radius: 12px; text-align: center; border-left: 4px solid #25D366; }
+        .stat-card h3 { font-size: 28px; color: #25D366; }
+        .agent-stats { background: #1e272e; padding: 15px; border-radius: 12px; margin: 20px 0; }
+        .stat-table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 10px; }
+        .stat-table th, .stat-table td { padding: 10px; border-bottom: 1px solid #34495e; text-align: left; }
+        .stat-table th { background: #2c3e50; color: #25D366; }
+        .search-bar { margin: 15px 0; display: flex; gap: 10px; }
+        .search-bar input { flex: 1; padding: 12px; border-radius: 8px; border: none; background: #2c3e50; color: white; }
+        .shop-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 20px; }
+        .shop-card { background: #2c3e50; border-radius: 16px; overflow: hidden; border: 1px solid #3d4e5f; padding: 15px; }
+        .shop-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #25D366; padding-bottom: 8px; margin-bottom: 10px;}
+        .shop-name { font-weight: bold; font-size: 16px; color: #25D366; }
+        .shop-status { padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: bold; }
+        .status-active { background: #2ecc71; color: white; }
+        .status-inactive { background: #e74c3c; color: white; }
+        .month-tracker { background: #1e2a3a; border-radius: 10px; padding: 10px; margin: 10px 0; text-align: center; }
+        .month-badge { display: inline-block; padding: 4px 10px; border-radius: 15px; font-size: 11px; margin: 2px; font-weight: bold; }
+        .month-completed { background: #2ecc71; color: white; }
+        .month-current { background: #f39c12; color: white; }
+        .month-upcoming { background: #7f8c8d; color: white; opacity: 0.5; }
+        .shop-actions { display: flex; gap: 8px; margin-top: 15px; flex-wrap: wrap; }
+        .action-btn { padding: 8px 12px; border: none; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: bold; color: white; text-decoration: none; text-align: center; }
+        .btn-toggle { background: #f39c12; }
+        .btn-delete { background: #e74c3c; }
+        .btn-cert { background: #3498db; }
+        .btn-live { background: #25D366; }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h2>🔑 मास्टर डैशबोर्ड - अपना मार्केट</h2>
+    <p>प्रोजेक्ट संचालक: तामिर अली (संपूर्ण कंट्रोल पैनल)</p>
+</div>
+
+<div class="system-switch-box">
+    <span class="switch-label">⚙️ ग्लोबल मार्केट सर्वर सिस्टम:</span>
+    <span id="systemStatusIndicator" class="system-status-indicator indicator-on">लोड हो रहा है...</span>
+    <button onclick="changeSystemStatus('active')" class="control-btn btn-system-on">🟢 सर्वर ON करें</button>
+    <button onclick="changeSystemStatus('off')" class="control-btn btn-system-off">🔴 सर्वर OFF करें</button>
+</div>
+
+<div class="stats-container">
+    <div class="stat-card"><h3 id="totalShops">0</h3><p>कुल दुकानें</p></div>
+    <div class="stat-card"><h3 id="activeShops">0</h3><p>सक्रिय दुकानें</p></div>
+    <div class="stat-card"><h3 id="totalProducts">0</h3><p>कुल प्रोडक्ट्स</p></div>
+</div>
+
+<div class="agent-stats">
+    <h3>📊 एजेंट रिपोर्ट कार्ड:</h3>
+    <table class="stat-table">
+        <thead><tr><th>एजेंट नाम</th><th>कुल दुकानें</th><th>संभाले गए प्रोडक्ट्स</th></tr></thead>
+        <tbody id="agentTableBody"></tbody>
+    </table>
+</div>
+
+<div class="search-bar">
+    <input type="text" id="searchShop" placeholder="🔍 दुकान या एजेंट का नाम ढूंढें..." onkeyup="filterShops()">
+</div>
+
+<div id="shopList" class="shop-container">डेटा लोड हो रहा है...</div>
+
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+
+<script>
+    const firebaseConfig = { apiKey: "AIzaSyBfYd6Cbt6bDmK7Rmh_3RivoHTRl-5AweQ", projectId: "apna-market-61004" };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    let allShops = [];
+    const masterPassword = "tamir@00769";
+
+    function listenToSystemControl() {
+        db.collection('settings').doc('system_control').onSnapshot(doc => {
+            let indicator = document.getElementById('systemStatusIndicator');
+            if (doc.exists) {
+                let status = doc.data().status;
+                if (status === 'off') {
+                    indicator.innerText = "🔴 सर्वर बंद (OFF)";
+                    indicator.className = "system-status-indicator indicator-off";
+                } else {
+                    indicator.innerText = "🟢 सर्वर चालू (ON)";
+                    indicator.className = "system-status-indicator indicator-on";
+                }
+            } else {
+                db.collection('settings').doc('system_control').set({ status: 'active' });
+            }
+        });
+    }
+    listenToSystemControl();
+
+    async function changeSystemStatus(targetStatus) {
+        let pass = prompt("ग्लोबल सर्वर स्थिति के लिए मास्टर पासवर्ड डालें:");
+        if(pass !== masterPassword) { alert("गलत पासवर्ड! एक्सेस अस्वीकृत।"); return; }
+        try {
+            await db.collection('settings').doc('system_control').update({ status: targetStatus });
+            alert(`✅ वैश्विक सर्वर सफलतापूर्वक ${targetStatus === 'active' ? 'चालू' : 'बंद'} हुआ!`);
+        } catch(e) { console.error(e); }
+    }
+
+    async function loadMasterData() {
+        db.collection("shops").onSnapshot(snapshot => {
+            allShops = [];
+            let totalProds = 0, activeCount = 0;
+            let agents = {};
+
+            snapshot.forEach(doc => {
+                let data = doc.data();
+                allShops.push({ id: doc.id, ...data });
+                if(data.status === 'active') activeCount++;
+                totalProds += (data.products?.length || 0);
+
+                let agName = data.agentName || "सीधा दुकानदार";
+                if(!agents[agName]) agents[agName] = { count: 0, prods: 0 };
+                agents[agName].count++;
+                agents[agName].prods += (data.products?.length || 0);
+            });
+
+            document.getElementById('totalShops').innerText = allShops.length;
+            document.getElementById('activeShops').innerText = activeCount;
+            document.getElementById('totalProducts').innerText = totalProds;
+            renderAgentTable(agents);
+            renderShops(allShops);
+        });
+    }
+
+    function renderAgentTable(agents) {
+        let html = '';
+        for(let a in agents) {
+            html += `<tr><td>${escapeHtml(a)}</td><td><b>${agents[a].count}</b></td><td>${agents[a].prods}</td></tr>`;
+        }
+        document.getElementById('agentTableBody').innerHTML = html || '<tr><td colspan="3">कोई डेटा नहीं</td></tr>';
+    }
+
+    function getMonthInfo(startDateObj) {
+        let start = startDateObj ? startDateObj.toDate() : new Date();
+        let diffDays = Math.ceil(Math.abs(new Date() - start) / (1000 * 60 * 60 * 24));
+        let month = Math.ceil(diffDays / 30);
+        return { current: month > 6 ? 6 : month, days: diffDays };
+    }
+
+    function renderShops(shops) {
+        let html = '';
+        shops.forEach(shop => {
+            let mInfo = getMonthInfo(shop.startDate);
+            html += `
+                <div class="shop-card">
+                    <div class="shop-header">
+                        <span class="shop-name">🏪 ${escapeHtml(shop.shopName)}</span>
+                        <span class="shop-status ${shop.status === 'active' ? 'status-active' : 'status-inactive'}">${shop.status === 'active' ? '✅ सक्रिय' : '❌ बंद'}</span>
+                    </div>
+                    <p style="font-size:12px; color:#bdc3c7;"><b>👤 मालिक:</b> ${escapeHtml(shop.ownerName)} | Code: <b>${shop.secretCode}</b></p>
+                    <p style="font-size:12px; color:#bdc3c7;"><b>📍 पता:</b> ${escapeHtml(shop.address)}</p>
+                    <p style="font-size:12px; color:#bdc3c7;"><b>📞 व्हाट्सएप:</b> ${shop.whatsapp}</p>
+                    <p style="font-size:12px; color:#FFD966; margin-top:5px;"><b>🤝 एजेंट:</b> ${escapeHtml(shop.agentName || 'सीधा दुकानदार')}</p>
+                    
+                    <div class="month-tracker">
+                        <span class="month-badge ${mInfo.current >= 1 ? 'month-completed' : 'month-upcoming'}">माह 1</span>
+                        <span class="month-badge ${mInfo.current >= 2 ? 'month-completed' : 'month-upcoming'}">माह 2</span>
+                        <span class="month-badge ${mInfo.current >= 3 ? 'month-completed' : 'month-upcoming'}">माह 3</span>
+                        <span class="month-badge ${mInfo.current >= 4 ? 'month-completed' : 'month-upcoming'}">माह 4</span>
+                        <span class="month-badge ${mInfo.current >= 5 ? 'month-completed' : 'month-upcoming'}">माह 5</span>
+                        <span class="month-badge ${mInfo.current >= 6 ? 'month-completed' : 'month-upcoming'}">माह 6</span>
+                        <div style="font-size:10px; margin-top:5px; color:#bdc3c7;">लाइव समय: ${mInfo.days} दिन</div>
+                    </div>
+                    <div class="shop-actions">
+                        <a href="index.html?shop=${shop.slug}" target="_blank" class="action-btn btn-live">👁️ लाइव दुकान</a>
+                        <a href="certificate.html?slug=${shop.slug}" target="_blank" class="action-btn btn-cert">📜 QR</a>
+                        <button onclick="toggleStatus('${shop.id}', '${shop.status}')" class="action-btn btn-toggle">🔒 लॉक/अनलॉग</button>
+                        <button onclick="deleteShop('${shop.id}')" class="action-btn btn-delete">🗑️ डिलीट</button>
+                    </div>
+                </div>`;
+        });
+        document.getElementById('shopList').innerHTML = html || '<p>कोई दुकान नहीं मिली।</p>';
+    }
+
+    function filterShops() {
+        let val = document.getElementById('searchShop').value.toLowerCase();
+        let filtered = allShops.filter(s => s.shopName.toLowerCase().includes(val) || (s.agentName && s.agentName.toLowerCase().includes(val)));
+        renderShops(filtered);
+    }
+
+    async function toggleStatus(id, curr) {
+        let pass = prompt("मास्टर पासवर्ड दर्ज करें:");
+        if(pass !== masterPassword) return;
+        await db.collection("shops").doc(id).update({ status: curr === 'active' ? 'inactive' : 'active' });
+    }
+
+    async function deleteShop(id) {
+        let pass = prompt("डिलीट करने के लिए मास्टर पासवर्ड दर्ज करें:");
+        if(pass !== masterPassword) return;
+        if(confirm("पूरी तरह से डिलीट करें?")) await db.collection("shops").doc(id).delete();
+    }
+
+    function escapeHtml(str) { return str ? str.replace(/[&<>]/g, m => m==='&'?'&amp;':m==='<'?'&lt;':'&gt;') : ''; }
+    loadMasterData();
+</script>
+</body>
+</html>
