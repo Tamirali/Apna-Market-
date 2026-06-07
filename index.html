@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>दुकान - अपना मार्केट</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f4f6f9; margin: 0; padding: 0; text-align: center; color: #333; padding-bottom: 90px; }
+        .owner-panel { background: #e67e22; color: white; padding: 12px 15px; font-weight: bold; font-size: 14px; display: none; justify-content: space-between; align-items: center; box-sizing: border-box; position: sticky; top: 0; z-index: 1001; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .logout-btn { background: #c0392b; color: white; border: none; padding: 6px 12px; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 13px; transition: 0.2s; }
+        .logout-btn:hover { background: #a82c1e; }
+        
+        .banner-container { background: #075e54; color: white; padding: 30px 15px; position: relative; min-height: 140px; box-sizing: border-box; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+        .banner-img { width: 100%; height: 100%; object-fit: cover; display: none; position: absolute; top: 0; left: 0; z-index: 1; opacity: 0.4; }
+        .banner-content { position: relative; z-index: 2; text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
+        .banner-content h1 { margin: 0; font-size: 30px; font-weight: bold; letter-spacing: 0.5px; }
+        .banner-content p { margin: 6px 0 0 0; font-size: 15px; opacity: 0.95; font-weight: 500; }
+        
+        .container { max-width: 600px; margin: 0 auto; padding: 15px; box-sizing: border-box; }
+        .info-card { background: white; padding: 15px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); text-align: left; margin-bottom: 20px; border-left: 5px solid #25D366; }
+        .info-card p { margin: 6px 0; font-size: 14px; color: #444; }
+        .search-box { width: 100%; padding: 12px 15px; border-radius: 25px; border: 1px solid #ddd; box-sizing: border-box; margin-bottom: 20px; font-size: 15px; outline: none; box-shadow: inset 0 1px 3px rgba(0,0,0,0.05); }
+        
+        .shop-section-block { background: white; border-radius: 16px; margin-bottom: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); overflow: hidden; text-align: left; border: 1px solid #eef0f3; }
+        .mini-shop-banner { background: linear-gradient(135deg, #075e54, #128C7E); color: white; padding: 12px 15px; display: flex; align-items: center; justify-content: space-between; position: relative; }
+        .mini-shop-banner h3 { margin: 0; font-size: 16px; font-weight: bold; }
+        .mini-shop-banner span { font-size: 12px; opacity: 0.9; background: rgba(0,0,0,0.2); padding: 3px 8px; border-radius: 10px; }
+
+        .products-horizontal-scroll { display: flex; gap: 15px; padding: 15px; overflow-x: auto; scroll-behavior: smooth; -webkit-overflow-scrolling: touch; box-sizing: border-box; }
+        .products-horizontal-scroll::-webkit-scrollbar { height: 5px; }
+        .products-horizontal-scroll::-webkit-scrollbar-thumb { background: #ddd; border-radius: 10px; }
+        
+        .product-card { background: white; border-radius: 12px; padding: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); text-align: center; display: flex; flex-direction: column; justify-content: space-between; position: relative; min-width: 230px; max-width: 230px; border: 1px solid #f0f0f0; box-sizing: border-box; flex-shrink: 0; transition: transform 0.2s; }
+        .product-card:hover { transform: translateY(-2px); }
+        
+        .zafran-offer-badge { position: absolute; top: 12px; left: 12px; background: #FF6F00; color: white; padding: 5px 12px; font-size: 13px; font-weight: bold; border-radius: 6px; box-shadow: 0 3px 6px rgba(0,0,0,0.2); z-index: 10; letter-spacing: 0.5px; animation: pulse 2s infinite; }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.04); } 100% { transform: scale(1); } }
+
+        .product-img { width: 100%; height: 240px; object-fit: cover; border-radius: 8px; background: #fafafa; margin-bottom: 8px; cursor: pointer; display: block; }
+        .product-name { font-size: 15px; font-weight: bold; margin: 6px 0 2px 0; color: #222; height: 38px; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+        
+        .zafran-text-promo { color: #FF6F00; font-weight: bold; font-size: 14px; margin: 2px 0; min-height: 18px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        
+        .product-desc { font-size: 12px; color: #777; margin: 0 0 6px 0; height: 34px; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; text-align: center; font-style: italic; }
+        .product-price { font-size: 18px; color: #e67e22; font-weight: bold; margin-bottom: 10px; }
+        
+        .btn { padding: 10px; border: none; border-radius: 6px; font-size: 14px; font-weight: bold; cursor: pointer; width: 100%; box-sizing: border-box; transition: 0.2s; }
+        .btn-order { background: #25D366; color: white; }
+        .owner-actions { display: none; margin-top: 8px; gap: 6px; width: 100%; }
+        .btn-edit { background: #ff9800; color: white; flex: 1; padding: 6px; font-size: 11px; }
+        .btn-delete { background: #e74c3c; color: white; flex: 1; padding: 6px; font-size: 11px; }
+        
+        .bottom-nav-bar { position: fixed; bottom: 15px; left: 15px; right: 15px; background: rgba(255, 255, 255, 0.95); border-radius: 35px; padding: 8px 15px; display: flex; justify-content: space-between; align-items: center; z-index: 1000; box-shadow: 0 4px 20px rgba(0,0,0,0.15); max-width: 570px; margin: 0 auto; backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.4); }
+        .nav-circle-btn { width: 50px; height: 50px; border-radius: 50%; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 3px 8px rgba(0,0,0,0.15); transition: 0.2s; padding: 0; }
+        .home-btn { background: #3498db; color: white; font-size: 24px; }
+        .edit-btn { background: #075e54; color: white; font-size: 22px; }
+        .bottom-cart-trigger { background: #25D366; color: white; border-radius: 25px; padding: 10px 20px; font-weight: bold; font-size: 14px; border: none; cursor: pointer; box-shadow: 0 3px 8px rgba(0,0,0,0.15); display: flex; align-items: center; gap: 8px; flex-grow: 1; margin: 0 12px; justify-content: center; }
+        .bottom-cart-trigger span { background: white; color: #25D366; padding: 2px 8px; border-radius: 12px; font-size: 12px; }
+        
+        .login-modal { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); z-index: 2000; align-items: center; justify-content: center; padding: 15px; backdrop-filter: blur(3px); }
+        .modal-card { background: white; border-radius: 20px; width: 100%; max-width: 400px; box-shadow: 0 5px 25px rgba(0,0,0,0.2); overflow: hidden; }
+        .modal-header { background: #075e54; color: white; padding: 15px 20px; font-weight: bold; display: flex; justify-content: space-between; align-items: center; font-size: 16px; }
+        .modal-close { background: none; border: none; color: white; font-size: 22px; cursor: pointer; }
+        .modal-body { padding: 25px 20px; text-align: center; }
+        .modal-body input { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 10px; font-size: 16px; text-align: center; box-sizing: border-box; margin-bottom: 15px; outline: none; letter-spacing: 2px; }
+        .modal-body button { background: #25D366; color: white; width: 100%; padding: 12px; border: none; border-radius: 10px; font-size: 16px; font-weight: bold; cursor: pointer; }
+        
+        .zoom-modal { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(135deg, rgba(7, 94, 84, 0.95), rgba(37, 211, 102, 0.9), rgba(52, 152, 219, 0.95)); z-index: 3000; align-items: center; justify-content: center; padding: 20px; backdrop-filter: blur(8px); }
+        .zoom-card { position: relative; width: 100%; max-width: 380px; background: white; border-radius: 24px; box-shadow: 0 15px 35px rgba(0,0,0,0.3); display: flex; flex-direction: column; overflow: hidden; }
+        .zoom-card-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid #f0f0f0; background: #fafafa; }
+        .zoom-shop-brand { display: flex; align-items: center; gap: 8px; font-weight: bold; font-size: 15px; color: #222; }
+        .zoom-shop-icon { background: #075e54; color: white; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: bold; }
+        .zoom-card-close { background: none; border: none; color: #666; font-size: 20px; cursor: pointer; padding: 4px; }
+        .zoom-img-box { width: 100%; height: 340px; background: #ffffff; display: flex; align-items: center; justify-content: center; padding: 10px; box-sizing: border-box; }
+        .zoom-img { max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 8px; }
+        .zoom-card-footer { padding: 16px; background: #ffffff; border-top: 1px solid #f5f5f5; text-align: left; }
+        .zoom-item-name { font-size: 16px; font-weight: bold; color: #222; margin: 0 0 4px 0; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        .zoom-item-price { font-size: 18px; font-weight: bold; color: #e67e22; margin: 0 0 12px 0; }
+        .zoom-item-desc { font-size: 14px; color: #555; margin: 0 0 15px 0; line-height: 1.5; text-align: left; background: #f9f9f9; padding: 10px; border-radius: 8px; border-left: 3px solid #3498db; }
+        .zoom-action-row { display: flex; gap: 10px; align-items: center; }
+        .zoom-btn-visit { background: #3498db; color: white; border: none; padding: 10px 20px; border-radius: 20px; font-weight: bold; font-size: 14px; cursor: pointer; flex: 2; text-align: center; display: flex; align-items: center; justify-content: center; gap: 5px; }
+        .zoom-btn-share { background: #f0f0f0; color: #333; border: 1px solid #ddd; padding: 10px 15px; border-radius: 20px; font-weight: 500; font-size: 13px; cursor: pointer; flex: 1; text-align: center; display: flex; align-items: center; justify-content: center; gap: 4px; }
+        .big-close-btn { position: absolute; top: 25px; right: 25px; background: rgba(255,255,255,0.2); border: none; color: white; font-size: 24px; width: 44px; height: 44px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(5px); }
+        #msg { color: #666; margin-top: 60px; font-size: 16px; font-weight: 500; padding: 20px; }
+    </style>
+</head>
+<body>
+
+<div id="ownerBar" class="owner-panel">
+    <span>⚙️ एडमिन मोड सक्रिय है</span>
+    <button class="logout-btn" onclick="exitOwnerMode()">🚪 एडमिन मोड बंद करें</button>
+</div>
+
+<div class="banner-container" id="headerBox">
+    <img id="shopBanner" class="banner-img" src="" alt="Shop Banner">
+    <div class="banner-content">
+        <h1 id="displayShopName">Apna-Market-</h1>
+        <p id="displayOwnerName">Bharosa rakhen</p>
+    </div>
+</div>
+
+<div class="container" id="mainContent" style="display: none;">
+    <div class="info-card">
+        <p>📍 <b>पता:</b> <span id="displayAddress">...</span></p>
+        <p>📞 <b>व्हाट्सएप:</b> <span id="displayWhatsapp">...</span></p>
+    </div>
+    
+    <input type="text" id="searchInp" class="search-box" placeholder="🔍 पूरे मार्केट का सामान खोजें..." oninput="filterGlobalMarket()">
+    
+    <div class="shop-section-block" id="mainShopBlock">
+        <div class="mini-shop-banner" style="background: linear-gradient(135deg, #075e54, #25D366);">
+            <h3 id="mainShopBannerTitle">✨ मुख्य दुकान के उत्पाद</h3>
+            <span>स्लाइड करें ➡️</span>
+        </div>
+        <div id="mainProductsContainer" class="products-horizontal-scroll"></div>
+    </div>
+
+    <div id="dynamicMarketContainer"></div>
+</div>
+
+<div id="msg">डेटा सुरक्षित रूप से लोड हो रहा है...</div>
+
+<div class="bottom-nav-bar" id="bottomNav" style="display: none;">
+    <button class="nav-circle-btn home-btn" onclick="goHome()">🏠</button>
+    <button class="bottom-cart-trigger" id="cartTriggerBtn" onclick="sendWhatsappOrder()">
+        🛍️ व्हाट्सएप ऑर्डर <span id="cartCountCircle">0</span>
+    </button>
+    <button class="nav-circle-btn edit-btn" id="adminLockBtn" onclick="openLoginModal()">🔒</button>
+</div>
+
+<div class="login-modal" id="loginModal">
+    <div class="modal-card">
+        <div class="modal-header">
+            <span>🔐 दुकानदार एडमिन पैनल</span>
+            <button class="modal-close" onclick="closeLoginModal()">✕</button>
+        </div>
+        <div class="modal-body">
+            <input type="password" id="modalSecretCode" placeholder="•••••••••" maxlength="10">
+            <button onclick="processModalLogin()">🔓 लॉगिन करें</button>
+        </div>
+    </div>
+</div>
+
+<div class="zoom-modal" id="imageZoomModal" onclick="hideZoomModal()">
+    <button class="big-close-btn" onclick="hideZoomModal()">✕</button>
+    <div class="zoom-card" onclick="event.stopPropagation()">
+        <div class="zoom-card-header">
+            <div class="zoom-shop-brand">
+                <div class="zoom-shop-icon" id="zoomBrandIcon">🏪</div>
+                <span id="zoomShopTitleName">दुकान का नाम</span>
+            </div>
+            <button class="zoom-card-close" onclick="hideZoomModal()">✕</button>
+        </div>
+        <div class="zoom-img-box">
+            <img class="zoom-img" id="zoomedProductImg" src="">
+        </div>
+        <div class="zoom-card-footer">
+            <div class="zoom-item-name" id="zoomedProductTitle">Product Name</div>
+            <div class="zoom-item-price" id="zoomedProductPrice">₹00</div>
+            <div class="zoom-item-desc" id="zoomedProductDesc">...</div>
+            <div class="zoom-action-row">
+                <button class="zoom-btn-visit" id="zoomVisitBtn">🛍️ Visit / Add</button>
+                <button class="zoom-btn-share" id="zoomShareBtn">🔗 Share</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+
+<script>
+    const firebaseConfig = { 
+        apiKey: "AIzaSyBfYd6Cbt6bDmK7Rmh_3RivoHTRl-5AweQ", 
+        authDomain: "apna-market-61004.firebaseapp.com",
+        projectId: "apna-market-61004",
+        storageBucket: "apna-market-61004.appspot.com"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    let currentShopId = null;
+    let mainShopProducts = [];
+    let allShopsData = []; 
+    let cart = {};
+    let isOwner = false;
+    let shopSecretCode = ""; 
+    let globalShopName = "Apna-Market-";
+    let shopSlug = new URLSearchParams(window.location.search).get('shop');
+
+    window.onload = function() {
+        if (!shopSlug) fetchDefaultShop(); else loadShopData();
+    };
+
+    async function fetchDefaultShop() {
+        try {
+            let snap = await db.collection('shops').where('status', '==', 'active').limit(1).get();
+            if(!snap.empty) { 
+                shopSlug = snap.docs[0].data().slug; 
+                loadShopData(); 
+            } else { 
+                document.getElementById('msg').innerHTML = "❌ <b>त्रुटि:</b> कोई भी सक्रिय दुकान नहीं मिली।"; 
+            }
+        } catch(e) { document.getElementById('msg').innerText = "त्रुटि: " + e.message; }
+    }
+
+    async function loadShopData() {
+        try {
+            let snapshot = await db.collection('shops').where('slug', '==', shopSlug).get();
+            if (snapshot.empty) { document.getElementById('msg').innerHTML = "❌ दुकान सक्रिय नहीं मिल सकी!"; return; }
+
+            let doc = snapshot.docs[0];
+            currentShopId = doc.id;
+            let shopData = doc.data();
+            shopSecretCode = shopData.secretCode; 
+            globalShopName = shopData.shopName || "Apna-Market-";
+            mainShopProducts = shopData.products || [];
+
+            let loggedCode = sessionStorage.getItem('owner_secret_code');
+            if (shopData.status !== 'active' && loggedCode !== shopSecretCode) {
+                document.getElementById('msg').innerHTML = "<h2>दुकान अभी सक्रिय नहीं है</h2>"; return;
+            }
+
+            if (loggedCode && loggedCode === shopSecretCode) {
+                isOwner = true;
+                document.getElementById('ownerBar').style.display = 'flex';
+                document.getElementById('adminLockBtn').innerHTML = "✏️";
+                document.getElementById('adminLockBtn').style.background = "#e67e22";
+            }
+
+            document.getElementById('displayShopName').innerText = globalShopName;
+            document.getElementById('mainShopBannerTitle').innerText = `✨ ${globalShopName} के उत्पाद`;
+            document.getElementById('displayOwnerName').innerText = shopData.ownerName ? "संचालक: " + shopData.ownerName : "Bharosa rakhen";
+            document.getElementById('displayAddress').innerText = shopData.address || "उपलब्ध नहीं";
+            document.getElementById('displayWhatsapp').innerText = "+91 " + (shopData.whatsapp || "");
+
+            if (shopData.bannerUrl) {
+                let bImg = document.getElementById('shopBanner'); 
+                bImg.src = shopData.bannerUrl; bImg.style.display = 'block';
+            }
+
+            document.getElementById('msg').style.display = 'none';
+            document.getElementById('mainContent').style.display = 'block';
+            document.getElementById('bottomNav').style.display = 'flex';
+
+            renderMainProductsHorizontal(mainShopProducts);
+            loadEntireMarketSections();
+        } catch (e) { document.getElementById('msg').innerText = "डेटा लोड त्रुटि: " + e.message; }
+    }
+
+    function renderMainProductsHorizontal(products) {
+        let container = document.getElementById('mainProductsContainer');
+        let block = document.getElementById('mainShopBlock');
+        if (products.length === 0) { container.innerHTML = "<p style='padding:15px; color:#666;'>कोई उत्पाद उपलब्ध नहीं है</p>"; return; }
+        block.style.display = 'block';
+
+        let html = '';
+        products.forEach((p, index) => {
+            let img = p.img || "https://via.placeholder.com/200?text=No+Image";
+            // अगर id नहीं है, तो इंडेक्स या नाम को फॉलबैक आईडी बनाएं
+            let pId = p.id || "prod_" + index;
+            let inCart = cart[pId] ? true : false;
+            
+            let discountBadgeHtml = (p.discount && p.discount.trim() !== "") ? `<div class="zafran-offer-badge">🔥 ${escapeHtml(p.discount)} OFF</div>` : '';
+            let promoTextHtml = (p.offer && p.offer.trim() !== "") ? `<div class="zafran-text-promo">🎁 ${escapeHtml(p.offer)}</div>` : '<div class="zafran-text-promo"></div>';
+
+            html += `
+                <div class="product-card">
+                    ${discountBadgeHtml}
+                    <img class="product-img" src="${img}" onclick="showZoomModal('${img}', '${escapeHtml(p.name)}', ${p.price}, '${pId}', '${escapeHtml(p.desc || "")}', '${escapeHtml(globalShopName)}')">
+                    <div class="product-name">${escapeHtml(p.name)}</div>
+                    ${promoTextHtml}
+                    <div class="product-desc">${escapeHtml(p.desc || "बेहतरीन क्वालिटी")}</div>
+                    <div class="product-price">₹${p.price}</div>
+                    <button class="btn btn-order" id="btn_${pId}" onclick="toggleCart('${pId}', '${escapeHtml(p.name)}', ${p.price})" style="background: ${inCart ? '#e67e22' : '#25D366'}">
+                        ${inCart ? '❌ हटाएँ' : '➕ जोड़ें'}
+                    </button>
+                    <div class="owner-actions" id="actions_${pId}" style="display: ${isOwner ? 'flex' : 'none'}">
+                        <button class="btn btn-edit" onclick="editProductInline('${pId}', '${escapeHtml(p.name)}', ${p.price})">✏️ बदलें</button>
+                        <button class="btn btn-delete" onclick="deleteProductInline('${pId}', '${escapeHtml(p.name)}', ${p.price})">🗑️ हटाएँ</button>
+                    </div>
+                </div>
+            `;
+        });
+        container.innerHTML = html;
+    }
+
+    async function loadEntireMarketSections() {
+        try {
+            let snap = await db.collection('shops').where('status', '==', 'active').get();
+            allShopsData = [];
+            snap.forEach(doc => { if(doc.id !== currentShopId) allShopsData.push({ id: doc.id, ...doc.data() }); });
+            buildDynamicMarketRows(allShopsData);
+        } catch(e) { console.log("मार्केट लोडिंग एरर: ", e.message); }
+    }
+
+    function buildDynamicMarketRows(shopsList) {
+        let container = document.getElementById('dynamicMarketContainer');
+        let html = '';
+
+        shopsList.forEach(shop => {
+            let prods = shop.products || [];
+            if(prods.length > 0) {
+                html += `
+                    <div class="shop-section-block">
+                        <div class="mini-shop-banner">
+                            <h3>🏪 ${escapeHtml(shop.shopName)}</h3>
+                            <span>स्वाइप करें ➡️</span>
+                        </div>
+                        <div class="products-horizontal-scroll">
+                `;
+                
+                prods.forEach((p, index) => {
+                    let img = p.img || "https://via.placeholder.com/200?text=No+Image";
+                    let pId = p.id || "market_prod_" + index;
+                    let discountBadgeHtml = (p.discount && p.discount.trim() !== "") ? `<div class="zafran-offer-badge">🔥 ${escapeHtml(p.discount)} OFF</div>` : '';
+                    let promoTextHtml = (p.offer && p.offer.trim() !== "") ? `<div class="zafran-text-promo">🎁 ${escapeHtml(p.offer)}</div>` : '<div class="zafran-text-promo"></div>';
+
+                    html += `
+                        <div class="product-card">
+                            ${discountBadgeHtml}
+                            <img class="product-img" src="${img}" onclick="showZoomModal('${img}', '${escapeHtml(p.name)}', ${p.price}, '${pId}', '${escapeHtml(p.desc || "")}', '${escapeHtml(shop.shopName)}', '${shop.whatsapp}')">
+                            <div class="product-name">${escapeHtml(p.name)}</div>
+                            ${promoTextHtml}
+                            <div class="product-desc">${escapeHtml(p.desc || "क्वालिटी प्रोडक्ट")}</div>
+                            <div class="product-price">₹${p.price}</div>
+                            <button class="btn btn-order" style="background: #3498db;" onclick="directNearbyWhatsapp('${shop.whatsapp}', '${escapeHtml(shop.shopName)}', '${escapeHtml(p.name)}', ${p.price})">
+                                💬 ऑर्डर लें
+                            </button>
+                        </div>
+                    `;
+                });
+                html += `</div></div>`;
+            }
+        });
+        container.innerHTML = html;
+    }
+
+    function filterGlobalMarket() {
+        let text = document.getElementById('searchInp').value.toLowerCase().trim();
+        let filteredMain = mainShopProducts.filter(p => p.name.toLowerCase().includes(text));
+        renderMainProductsHorizontal(filteredMain);
+
+        let filteredShops = allShopsData.map(shop => {
+            return { ...shop, products: (shop.products || []).filter(p => p.name.toLowerCase().includes(text)) };
+        });
+        buildDynamicMarketRows(filteredShops);
+    }
+
+    function directNearbyWhatsapp(num, shopName, prodName, price) {
+        let cleanNum = num.replace(/[^0-9]/g, '');
+        let text = `नमस्ते, मैंने आपकी दुकान *${shopName}* पर यह सामान देखा है:\n📦 *उत्पाद:* ${prodName}\n💰 *मूल्य:* ₹${price}\n\nकृपया मेरा ऑर्डर कन्फर्म करें।`;
+        window.open("https://api.whatsapp.com/send?phone=91" + cleanNum + "&text=" + encodeURIComponent(text), '_blank');
+    }
+
+    function showZoomModal(imgUrl, prodName, prodPrice, prodId, prodDesc, shopTitle, customWhatsapp = null) {
+        document.getElementById('zoomShopTitleName').innerText = shopTitle;
+        document.getElementById('zoomBrandIcon').innerText = shopTitle.charAt(0).toUpperCase();
+        document.getElementById('zoomedProductImg').src = imgUrl;
+        document.getElementById('zoomedProductTitle').innerText = prodName;
+        document.getElementById('zoomedProductPrice').innerText = "₹" + prodPrice;
+        document.getElementById('zoomItemDesc').innerText = prodDesc || "कोई विवरण उपलब्ध नहीं है।";
+        
+        let visitBtn = document.getElementById('zoomVisitBtn');
+        if (customWhatsapp) {
+            visitBtn.innerText = "💬 व्हाट्सएप ऑर्डर"; visitBtn.style.background = "#25D366";
+            visitBtn.onclick = function() { directNearbyWhatsapp(customWhatsapp, shopTitle, prodName, prodPrice); hideZoomModal(); };
+        } else {
+            let inCart = cart[prodId] ? true : false;
+            visitBtn.innerText = inCart ? "❌ सूची से हटाएँ" : "🛍️ ऑर्डर सूची में जोड़ें";
+            visitBtn.style.background = inCart ? "#e67e22" : "#25D366";
+            visitBtn.onclick = function() { toggleCart(prodId, prodName, prodPrice); hideZoomModal(); };
+        }
+
+        document.getElementById('zoomShareBtn').onclick = function() {
+            let shareLink = window.location.origin + window.location.pathname + "?shop=" + shopSlug + "&pid=" + prodId;
+            navigator.clipboard.writeText(shareLink).then(() => alert("🔗 प्रोडक्ट लिंक कॉपी हो गया!")).catch(() => prompt("कॉपी करें:", shareLink));
+        };
+        document.getElementById('imageZoomModal').style.display = 'flex';
+    }
+
+    function hideZoomModal() { document.getElementById('imageZoomModal').style.display = 'none'; }
+
+    function toggleCart(id, name, price) {
+        if (cart[id]) delete cart[id]; else cart[id] = { name: name, price: price };
+        updateCartCount(); renderMainProductsHorizontal(mainShopProducts);
+    }
+
+    function updateCartCount() { document.getElementById('cartCountCircle').innerText = Object.keys(cart).length; }
+
+    function sendWhatsappOrder() {
+        if(Object.keys(cart).length === 0) { alert("पहले सामान जोड़ें!"); return; }
+        let waNumber = document.getElementById('displayWhatsapp').innerText.replace(/[^0-9]/g, '');
+        let text = `🛒 *नया ऑर्डर!*\n---------------------------\n`;
+        let total = 0; let count = 1;
+        for (let id in cart) {
+            text += `${count}. ${cart[id].name} - *₹${cart[id].price}*\n`; total += cart[id].price; count++;
+        }
+        text += `---------------------------\n💰 *कुल राशि: ₹${total}*`;
+        window.open("https://api.whatsapp.com/send?phone=" + waNumber + "&text=" + encodeURIComponent(text), '_blank');
+    }
+
+    function goHome() { window.location.href = window.location.origin + window.location.pathname + "?shop=" + shopSlug; }
+    function openLoginModal() { if(!isOwner) document.getElementById('loginModal').style.display = 'flex'; }
+    function closeLoginModal() { document.getElementById('loginModal').style.display = 'none'; document.getElementById('modalSecretCode').value = ''; }
+
+    function processModalLogin() {
+        if(document.getElementById('modalSecretCode').value.trim() === shopSecretCode) {
+            sessionStorage.setItem('owner_secret_code', shopSecretCode);
+            isOwner = true;
+            document.getElementById('ownerBar').style.display = 'flex';
+            document.getElementById('adminLockBtn').innerHTML = "✏️";
+            document.getElementById('adminLockBtn').style.background = "#e67e22";
+            closeLoginModal(); renderMainProductsHorizontal(mainShopProducts);
+            alert("🔓 लॉगिन सफल!");
+        } else { alert("गलत कोड!"); }
+    }
+
+    // [त्रि-स्तरीय मिलान संपादन तकनीक]
+    async function editProductInline(productId, fallbackName, fallbackPrice) {
+        // ID या नाम/कीमत के द्वारा उत्पाद ढूँढना
+        let idx = mainShopProducts.findIndex(p => p.id === productId || (p.name === fallbackName && p.price == fallbackPrice));
+        if(idx === -1) { alert("❌ संपादन के लिए उत्पाद नहीं मिला!"); return; }
+        
+        let p = mainShopProducts[idx];
+        let newName = prompt("नया नाम दर्ज करें:", p.name); if(!newName) return;
+        let newPrice = prompt("नई कीमत (सिर्फ नंबर):", p.price); if(!newPrice) return;
+        
+        let newDiscount = prompt("डिस्काउंट लिखें (टैग छुपाने के लिए खाली छोड़ें):", p.discount || "");
+        let newOffer = prompt("विशेष ऑफर लिखें (छुपाने के लिए खाली छोड़ें):", p.offer || "");
+        
+        if (!currentShopId && shopSlug) {
+            let snapshot = await db.collection('shops').where('slug', '==', shopSlug).get();
+            if (!snapshot.empty) currentShopId = snapshot.docs[0].id;
+        }
+
+        if (!currentShopId) {
+            alert("❌ दुकान की ID नहीं मिल सकी! कृपया पेज रीफ्रेश करें।");
+            return;
+        }
+
+        let updatedList = [...mainShopProducts];
+        updatedList[idx] = { 
+            ...p, 
+            name: newName.trim(), 
+            price: parseInt(newPrice),
+            discount: newDiscount ? newDiscount.trim() : "",
+            offer: newOffer ? newOffer.trim() : ""
+        };
+        
+        try {
+            await db.collection('shops').doc(currentShopId).update({ products: updatedList });
+            mainShopProducts = updatedList;
+            renderMainProductsHorizontal(mainShopProducts);
+            alert("✅ उत्पाद सफलतापूर्वक अपडेट हुआ!");
+            window.location.reload();
+        } catch(e) { alert("❌ अपडेट एरर: " + e.message); }
+    }
+
+    // [1000012203.png स्थायी समाधान - अचूक डिलीट तकनीक]
+    async function deleteProductInline(productId, fallbackName, fallbackPrice) {
+        if(!confirm("क्या आप वाकई इस उत्पाद को हटाना चाहते हैं?")) return;
+        
+        try {
+            if (!currentShopId && shopSlug) {
+                let snapshot = await db.collection('shops').where('slug', '==', shopSlug).get();
+                if (!snapshot.empty) {
+                    currentShopId = snapshot.docs[0].id;
+                }
+            }
+
+            if (!currentShopId) {
+                alert("❌ दुकान की ID नहीं मिल सकी, कृपया पेज रीफ्रेश करें।");
+                return;
+            }
+
+            // पहले ID से, फिर बैकअप में नाम और कीमत की जुगलबंदी से खोजना (1000012203.png एरर समाधान)
+            let targetProduct = mainShopProducts.find(p => p.id === productId);
+            if (!targetProduct) {
+                targetProduct = mainShopProducts.find(p => p.name === fallbackName && p.price == fallbackPrice);
+            }
+
+            if (!targetProduct) {
+                alert("❌ उत्पाद का मिलान डेटाबेस से नहीं हो सका! कृपया पेज रीफ्रेश करके पुन: प्रयास करें।");
+                return;
+            }
+
+            // फायरबेस Firestore के Array से सुरक्षित रूप से बिल्कुल उसी ऑब्जेक्ट को गायब करना
+            await db.collection('shops').doc(currentShopId).update({
+                products: firebase.firestore.FieldValue.arrayRemove(targetProduct)
+            });
+            
+            // स्थानीय स्क्रीन मेमोरी से साफ करना
+            mainShopProducts = mainShopProducts.filter(p => p !== targetProduct);
+            renderMainProductsHorizontal(mainShopProducts);
+            
+            alert("✅ उत्पाद सफलतापूर्वक डिलीट हो गया!");
+            window.location.reload();
+            
+        } catch(e) { 
+            alert("❌ डिलीट त्रुटि: " + e.message); 
+            console.error("Firebase Remove Error:", e);
+        }
+    }
+
+    function exitOwnerMode() {
+        sessionStorage.removeItem('owner_secret_code'); isOwner = false;
+        document.getElementById('ownerBar').style.display = 'none';
+        document.getElementById('adminLockBtn').innerHTML = "🔒"; document.getElementById('adminLockBtn').style.background = "#075e54";
+        renderMainProductsHorizontal(mainShopProducts);
+    }
+
+    function escapeHtml(str) { return str ? str.replace(/[&<>']/g, m => m==='&'?'&amp;':m==='<'?'&lt;':m==='>'?'&gt;':m==='\''?'&#39;':'') : ''; }
+</script>
+</body>
+</html>
