@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>अपनी दुकान का प्रबंधन - अपना मार्केट</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            background: #f4f6f9; 
+            margin: 0; 
+            padding: 0; 
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+        }
+
+        /* मुख्य मोबाइल स्क्रीन कंटेनर (जैसा स्क्रीनशॉट में दिख रहा है) */
+        .mobile-screen-container {
+            width: 100%;
+            max-width: 450px;
+            background: #ffffff;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+            min-height: 100vh;
+            box-sizing: border-box;
+            padding: 20px 15px 40px 15px;
+            position: relative;
+        }
+
+        /* मुख्य शीर्षक: अपनी दुकान का प्रबंधन */
+        .admin-main-header {
+            font-size: 20px;
+            color: #075e54;
+            font-weight: bold;
+            text-align: center;
+            margin-top: 10px;
+            margin-bottom: 25px;
+        }
+
+        /* गहरा हरा बटन स्टाइल (Profile Settings & Add Product) */
+        .section-header-btn {
+            background: #00594e;
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 6px;
+            font-size: 15px;
+            font-weight: bold;
+            width: 100%;
+            text-align: center;
+            margin-bottom: 15px;
+            box-sizing: border-box;
+        }
+
+        /* इनपुट ग्रुप स्टाइल */
+        .form-group {
+            text-align: left;
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            font-size: 14px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 6px;
+        }
+        .form-group label span {
+            font-size: 12px;
+            color: #666;
+            font-weight: normal;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            box-sizing: border-box;
+            font-size: 15px;
+            outline: none;
+            background: #ffffff;
+            color: #222;
+        }
+        
+        /* बड़ा पता बॉक्स (Textarea) */
+        .form-group textarea {
+            width: 100%;
+            height: 70px;
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            box-sizing: border-box;
+            font-size: 15px;
+            outline: none;
+            resize: none;
+            font-family: Arial, sans-serif;
+        }
+
+        /* नारंगी बटन: प्रोफाइल और बैनर अपडेट करें */
+        .btn-orange-update {
+            background: #e67e22;
+            color: white;
+            border: none;
+            padding: 14px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+            box-sizing: border-box;
+            margin-top: 5px;
+            margin-bottom: 30px;
+            transition: background 0.2s;
+        }
+        .btn-orange-update:hover {
+            background: #d35400;
+        }
+
+        /* चमकीला हरा बटन: सामान सुरक्षित करें */
+        .btn-green-save {
+            background: #25D366;
+            color: white;
+            border: none;
+            padding: 14px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+            box-sizing: border-box;
+            margin-top: 5px;
+            margin-bottom: 25px;
+            transition: background 0.2s;
+        }
+        .btn-green-save:hover {
+            background: #1ebd56;
+        }
+
+        /* आपके उत्पाद अनुभाग (1000012258.png के अनुसार) */
+        .products-section-title {
+            text-align: left;
+            font-size: 16px;
+            font-weight: bold;
+            color: #222;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* उत्पाद सूची का बॉक्स */
+        .product-list-box {
+            background: #f9f9f9;
+            border-radius: 12px;
+            padding: 12px;
+            margin-bottom: 30px;
+        }
+
+        /* सिंगल उत्पाद कार्ड रो */
+        .product-item-row {
+            background: #ffffff;
+            border: 1px solid #eaeaea;
+            border-radius: 10px;
+            padding: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .product-item-row:last-child {
+            margin-bottom: 0;
+        }
+        .prod-info {
+            text-align: left;
+        }
+        .prod-title {
+            font-size: 16px;
+            font-weight: bold;
+            color: #222;
+        }
+        .prod-price {
+            font-size: 15px;
+            color: #e67e22;
+            font-weight: bold;
+            margin-top: 4px;
+        }
+
+        /* एक्शन बटन्स (पेंसिल और कचरा पेटी) */
+        .action-buttons-group {
+            display: flex;
+            gap: 8px;
+        }
+        .btn-action {
+            border: none;
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+        }
+        .btn-edit {
+            background: #ffb300;
+            color: white;
+        }
+        .btn-delete {
+            background: #e53935;
+            color: white;
+        }
+
+        /* धूसर (Gray) बटन: पैनल लॉगआउट करें */
+        .btn-gray-logout {
+            background: #9e9e9e;
+            color: white;
+            border: none;
+            padding: 14px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+            box-sizing: border-box;
+            margin-top: 10px;
+            transition: background 0.2s;
+        }
+        .btn-gray-logout:hover {
+            background: #757575;
+        }
+
+        /* लोडिंग संदेश */
+        #loadingMsg {
+            font-size: 16px;
+            color: #666;
+            text-align: center;
+            padding: 40px 10px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="mobile-screen-container">
+    
+    <!-- डेटा लोड होने तक दिखने वाला संदेश -->
+    <div id="loadingMsg">डेटाबेस से आपकी दुकान कनेक्ट हो रही है...</div>
+
+    <!-- मुख्य एडमिन फॉर्म्स (डेटा लोड होने के बाद दिखेंगे) -->
+    <div id="adminFormContent" style="display: none;">
+        
+        <div class="admin-main-header">✏️ अपनी दुकान का प्रबंधन</div>
+
+        <!-- ================= SECTION 1: PROFILE SETTINGS ================= -->
+        <button class="section-header-btn">📝 दुकान की जानकारी बदलें (Profile Settings)</button>
+        
+        <div class="form-group">
+            <label>🏪 दुकान का नाम:</label>
+            <input type="text" id="shopNameInp" value="Lulu Market">
+        </div>
+
+        <div class="form-group">
+            <label>👤 दुकानदार का नाम:</label>
+            <input type="text" id="ownerNameInp" value="Amir Khan">
+        </div>
+
+        <div class="form-group">
+            <label>📞 व्हाट्सएप नंबर:</label>
+            <input type="text" id="whatsappInp" value="8797221991">
+        </div>
+
+        <div class="form-group">
+            <label>📍 दुकान का पता:</label>
+            <textarea id="addressInp">Siwan sadar bazar</textarea>
+        </div>
+
+        <div class="form-group">
+            <label>🖼️ दुकान का बैनर फोटो लिंक <span>(URL)</span>:</label>
+            <input type="text" id="bannerUrlInp" value="https://i.postimg.cc/xjtNNXW8/Screenshot-20260">
+        </div>
+
+        <button class="btn-orange-update" onclick="updateShopProfile()">🔄 प्रोफाइल और बैनर अपडेट करें</button>
+
+
+        <!-- ================= SECTION 2: ADD PRODUCT ================= -->
+        <button class="section-header-btn">➕ नया सामान जोड़ें (Add Product)</button>
+
+        <div class="form-group">
+            <input type="text" id="newProdName" placeholder="सामान का नाम">
+        </div>
+
+        <div class="form-group">
+            <input type="number" id="newProdPrice" placeholder="कीमत (₹)">
+        </div>
+
+        <div class="form-group">
+            <input type="text" id="newProdImg" placeholder="सामान की फोटो का लिंक (URL)">
+        </div>
+
+        <button class="btn-green-save" onclick="addNewProduct()">➕ सामान सुरक्षित करें</button>
+
+
+        <!-- ================= SECTION 3: PRODUCT LISTING ================= -->
+        <div class="products-section-title">📦 आपके उत्पाद:</div>
+        
+        <div class="product-list-box" id="productsContainer">
+            <!-- यहाँ डेटाबेस से उत्पाद लाइव लोड होंगे (जैसे Suit - ₹399) -->
+        </div>
+
+
+        <!-- ================= SECTION 4: LOGOUT ================= -->
+        <button class="btn-gray-logout" onclick="logoutAdminPanel()">🚪 पैनल लॉगआउट करें</button>
+
+    </div>
+</div>
+
+<!-- SDKs: Firebase केवल v8 का स्थिर वर्शन इस्तेमाल कर रहे हैं -->
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+
+<script>
+    // आपका लाइव Firebase कॉन्फ़िगरेशन
+    const firebaseConfig = { 
+        apiKey: "AIzaSyBfYd6Cbt6bDmK7Rmh_3RivoHTRl-5AweQ", 
+        authDomain: "apna-market-61004.firebaseapp.com",
+        projectId: "apna-market-61004",
+        storageBucket: "apna-market-61004.appspot.com"
+    };
+    
+    // इनिशियलाइज़ेशन
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    // वेरिएबल्स
+    let currentDocId = ""; 
+    let shopProductsArray = [];
+    // आपके डेटाबेस के मोमेंटम को बनाए रखने के लिए स्थिर स्लॉग
+    let currentShopSlug = "lulu-market"; 
+
+    // पेज लोड होते ही तुरंत डेटाबेस से लाइव डेटा उठाना
+    window.onload = function() {
+        fetchShopAdminData();
+    };
+
+    // Firebase से डेटा लाने का मुख्य फंक्शन
+    async function fetchShopAdminData() {
+        try {
+            // मान कर चल रहे हैं कि आपकी दुकान का मुख्य स्लॉग डेटाबेस में है
+            let snapshot = await db.collection('shops').get();
+            
+            if (snapshot.empty) {
+                document.getElementById('loadingMsg').innerHTML = "❌ डेटाबेस में कोई दुकान नहीं मिली।";
+                return;
+            }
+
+            // पहली उपलब्ध दुकान का चयन या मिलान
+            let doc = snapshot.docs[0];
+            currentDocId = doc.id;
+            let data = doc.data();
+
+            // इनपुट बॉक्स को लाइव डेटा से भरना
+            document.getElementById('shopNameInp').value = data.shopName || "";
+            document.getElementById('ownerNameInp').value = data.ownerName || "";
+            document.getElementById('whatsappInp').value = data.whatsapp || "";
+            document.getElementById('addressInp').value = data.address || "";
+            document.getElementById('bannerUrlInp').value = data.bannerUrl || "";
+
+            // प्रोडक्ट्स एरे सेव करना
+            shopProductsArray = data.products || [];
+
+            // UI को प्रदर्शित करना
+            document.getElementById('loadingMsg').style.display = 'none';
+            document.getElementById('adminFormContent').style.display = 'block';
+
+            // प्रोडक्ट्स लिस्ट रेंडर करना
+            renderAdminProducts();
+
+        } catch (error) {
+            document.getElementById('loadingMsg').innerHTML = "❌ कनेक्शन एरर: " + error.message;
+            console.error(error);
+        }
+    }
+
+    // उत्पादों की सूची को स्क्रीन पर दिखाने का फंक्शन (1000012258.png के अनुसार)
+    function renderAdminProducts() {
+        const container = document.getElementById('productsContainer');
+        if (shopProductsArray.length === 0) {
+            container.innerHTML = "<p style='color:#777; font-size:14px; text-align:center; margin:0;'>कोई उत्पाद नहीं है।</p>";
+            return;
+        }
+
+        let htmlContent = "";
+        shopProductsArray.forEach((item, index) => {
+            htmlContent += `
+                <div class="product-item-row">
+                    <div class="prod-info">
+                        <div class="prod-title">${item.name}</div>
+                        <div class="prod-price">₹${item.price}</div>
+                    </div>
+                    <div class="action-buttons-group">
+                        <button class="btn-action btn-edit" onclick="editProductInline(${index})">✏️</button>
+                        <button class="btn-action btn-delete" onclick="deleteProductInline(${index})">🗑️</button>
+                    </div>
+                </div>
+            `;
+        });
+        container.innerHTML = htmlContent;
+    }
+
+    // फंक्शन 1: प्रोफाइल और बैनर लाइव अपडेट करना (नारंगी बटन)
+    async function updateShopProfile() {
+        const sName = document.getElementById('shopNameInp').value.trim();
+        const oName = document.getElementById('ownerNameInp').value.trim();
+        const wNum = document.getElementById('whatsappInp').value.trim();
+        const addr = document.getElementById('addressInp').value.trim();
+        const bUrl = document.getElementById('bannerUrlInp').value.trim();
+
+        if (!sName || !wNum) {
+            alert("⚠️ कृपया दुकान का नाम और व्हाट्सएप नंबर ज़रूर भरें!");
+            return;
+        }
+
+        try {
+            await db.collection('shops').doc(currentDocId).update({
+                shopName: sName,
+                ownerName: oName,
+                whatsapp: wNum,
+                address: addr,
+                bannerUrl: bUrl
+            });
+            alert("🎯 दुकान की जानकारी सफलतापूर्वक लाइव अपडेट हो गई है!");
+        } catch (error) {
+            alert("❌ अपडेट फेल: " + error.message);
+        }
+    }
+
+    // फंक्शन 2: नया उत्पाद जोड़ना (हरा बटन)
+    async function addNewProduct() {
+        const pName = document.getElementById('newProdName').value.trim();
+        const pPrice = parseInt(document.getElementById('newProdPrice').value);
+        const pImg = document.getElementById('newProdImg').value.trim();
+
+        if (!pName || !pPrice || isNaN(pPrice)) {
+            alert("⚠️ कृपया सामान का नाम और सही कीमत भरें!");
+            return;
+        }
+
+        // नया उत्पाद ऑब्जेक्ट
+        let newProdObj = {
+            id: "prod_" + Date.now(),
+            name: pName,
+            price: pPrice,
+            img: pImg || "https://via.placeholder.com/300?text=No+Image",
+            desc: "शुद्ध और बेहतरीन क्वालिटी"
+        };
+
+        try {
+            // एरे में जोड़कर सीधे फायरस्टोर अपडेट
+            let updatedList = [...shopProductsArray, newProdObj];
+            await db.collection('shops').doc(currentDocId).update({ products: updatedList });
+
+            // लोकल स्टेट अपडेट करके दोबारा रेंडर करना
+            shopProductsArray = updatedList;
+            renderAdminProducts();
+
+            // इनपुट साफ़ करना
+            document.getElementById('newProdName').value = "";
+            document.getElementById('newProdPrice').value = "";
+            document.getElementById('newProdImg').value = "";
+
+            alert("🚀 नया सामान सफलतापूर्वक सुरक्षित कर दिया गया!");
+        } catch (error) {
+            alert("❌ सामान जोड़ने में त्रुटि: " + error.message);
+        }
+    }
+
+    // फंक्शन 3: उत्पाद संपादित (Edit) करना
+    async function editProductInline(index) {
+        let item = shopProductsArray[index];
+        let newName = prompt("सामान का नया नाम बदलें:", item.name);
+        if (newName === null) return; // कैंसिल करने पर रुक जाएगा
+        
+        let newPrice = prompt("नई कीमत दर्ज करें (₹):", item.price);
+        if (newPrice === null) return;
+
+        if (newName.trim() === "" || isNaN(parseInt(newPrice))) {
+            alert("⚠️ अमान्य नाम या कीमत!");
+            return;
+        }
+
+        shopProductsArray[index].name = newName.trim();
+        shopProductsArray[index].price = parseInt(newPrice);
+
+        try {
+            await db.collection('shops').doc(currentDocId).update({ products: shopProductsArray });
+            renderAdminProducts();
+            alert("✅ सामान अपडेट हो गया!");
+        } catch (error) {
+            alert("❌ एरर: " + error.message);
+        }
+    }
+
+    // फंक्शन 4: उत्पाद हटाना (Delete)
+    async function deleteProductInline(index) {
+        if (!confirm("क्या आप वाकई इस उत्पाद को हटाना चाहते हैं?")) return;
+
+        shopProductsArray.splice(index, 1);
+
+        try {
+            await db.collection('shops').doc(currentDocId).update({ products: shopProductsArray });
+            renderAdminProducts();
+            alert("🗑️ सामान सूची से हटा दिया गया!");
+        } catch (error) {
+            alert("❌ एरर: " + error.message);
+        }
+    }
+
+    // फंक्शन 5: पैनल लॉगआउट बटन
+    function logoutAdminPanel() {
+        if (confirm("क्या आप एडमिन पैनल बंद करना चाहते हैं?")) {
+            // मुख्य यूजर/कस्टमर इंटरफेस लिंक पर वापस भेजें (यदि उपलब्ध हो)
+            alert("पैनल से सुरक्षित लॉगआउट किया गया।");
+            window.location.reload(); 
+        }
+    }
+</script>
+
+</body>
+</html>
