@@ -1,0 +1,1554 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Apna Market - Complete</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com">
+    </script>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+    <!-- QRCode.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js">
+    </script>
+
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-app-compat.js">
+    </script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore-compat.js">
+    </script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-analytics-compat.js">
+    </script>
+
+    <style>
+        /* ===== HORIZONTAL SCROLL ===== */
+        .horizontal-scroll {
+            display: flex;
+            overflow-x: auto;
+            gap: 1rem;
+            padding: 0.5rem 0.25rem 1rem 0.25rem;
+            scroll-snap-type: x mandatory;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: thin;
+            scrollbar-color: #6366f1 #e2e8f0;
+        }
+        .horizontal-scroll::-webkit-scrollbar {
+            height: 6px;
+        }
+        .horizontal-scroll::-webkit-scrollbar-track {
+            background: #e2e8f0;
+            border-radius: 10px;
+        }
+        .horizontal-scroll::-webkit-scrollbar-thumb {
+            background: #6366f1;
+            border-radius: 10px;
+        }
+        .horizontal-scroll .product-card {
+            min-width: 160px;
+            max-width: 190px;
+            flex-shrink: 0;
+            scroll-snap-align: start;
+            transition: transform 0.25s ease, box-shadow 0.25s ease;
+            cursor: pointer;
+        }
+        .horizontal-scroll .product-card:hover {
+            transform: translateY(-4px) scale(1.03);
+            box-shadow: 0 12px 28px -8px rgba(0, 0, 0, 0.15);
+        }
+
+        /* ===== OFFER BADGE ===== */
+        .offer-badge {
+            background: linear-gradient(135deg, #f59e0b, #f97316);
+            color: white;
+            font-weight: 800;
+            padding: 0.15rem 0.7rem;
+            border-radius: 30px;
+            font-size: 0.7rem;
+            display: inline-block;
+            letter-spacing: 0.3px;
+            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+        }
+
+        /* ===== WHATSAPP FLOAT ===== */
+        .whatsapp-float {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            z-index: 999;
+            background: #25D366;
+            color: white;
+            border-radius: 50px;
+            padding: 12px 22px;
+            box-shadow: 0 6px 24px rgba(37, 211, 102, 0.45);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.25s ease;
+            border: none;
+            font-size: 0.95rem;
+        }
+        .whatsapp-float:hover {
+            transform: scale(1.08);
+            box-shadow: 0 8px 32px rgba(37, 211, 102, 0.55);
+            color: white;
+        }
+        .whatsapp-float i {
+            font-size: 1.6rem;
+        }
+
+        /* ===== PAGE TRANSITION ===== */
+        .page {
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+        .page.active {
+            display: block;
+        }
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(12px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* ===== ADMIN PASSWORD HIDDEN ===== */
+        .admin-password-field {
+            position: relative;
+        }
+        .admin-password-field input[type="password"] {
+            -webkit-text-security: disc;
+        }
+
+        /* ===== QR BIG BOX ===== */
+        .qr-big-box {
+            background: white;
+            border-radius: 16px;
+            padding: 16px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+            display: inline-block;
+            border: 2px dashed #6366f1;
+        }
+        .qr-big-box canvas {
+            border-radius: 12px;
+            display: block;
+            margin: 0 auto;
+        }
+
+        /* ===== MODAL ===== */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(4px);
+            z-index: 1000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .modal-overlay.active {
+            display: flex;
+        }
+        .modal-box {
+            background: white;
+            border-radius: 24px;
+            max-width: 400px;
+            width: 100%;
+            padding: 28px;
+            animation: fadeIn 0.3s ease;
+            box-shadow: 0 24px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        /* ===== SHOP OFF OVERLAY ===== */
+        .shop-off-overlay {
+            background: linear-gradient(135deg, #fef2f2, #fee2e2);
+            border: 2px solid #fca5a5;
+            border-radius: 16px;
+            padding: 2rem;
+            text-align: center;
+            min-height: 150px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .shop-off-overlay i {
+            font-size: 3rem;
+            color: #ef4444;
+            margin-bottom: 0.5rem;
+        }
+        .shop-off-overlay h3 {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #991b1b;
+        }
+        .shop-off-overlay p {
+            color: #7f1d1d;
+            margin-top: 0.25rem;
+        }
+        .shop-off-overlay .whatsapp-btn {
+            margin-top: 0.75rem;
+            background: #25D366;
+            color: white;
+            padding: 0.5rem 1.5rem;
+            border-radius: 30px;
+            text-decoration: none;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+        }
+        .shop-off-overlay .whatsapp-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 20px rgba(37, 211, 102, 0.4);
+        }
+
+        /* ===== LOADING SPINNER ===== */
+        .loading-spinner {
+            display: inline-block;
+            width: 30px;
+            height: 30px;
+            border: 3px solid #e2e8f0;
+            border-radius: 50%;
+            border-top-color: #6366f1;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* ===== SUCCESS POPUP ===== */
+        .success-popup {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 2000;
+            background: white;
+            border-radius: 24px;
+            padding: 40px 50px;
+            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.35);
+            text-align: center;
+            animation: popIn 0.5s ease;
+            display: none;
+            max-width: 90%;
+            width: 450px;
+        }
+        .success-popup.show {
+            display: block;
+        }
+        @keyframes popIn {
+            from {
+                transform: translate(-50%, -50%) scale(0.7);
+                opacity: 0;
+            }
+            to {
+                transform: translate(-50%, -50%) scale(1);
+                opacity: 1;
+            }
+        }
+        .success-popup .icon {
+            font-size: 4rem;
+            color: #10b981;
+            margin-bottom: 0.5rem;
+        }
+        .success-popup h2 {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: #065f46;
+            margin-bottom: 0.25rem;
+        }
+        .success-popup p {
+            color: #6b7280;
+            margin-bottom: 0.5rem;
+        }
+        .success-popup .code-box {
+            background: #f0fdf4;
+            border: 2px solid #86efac;
+            border-radius: 12px;
+            padding: 10px;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #065f46;
+            font-family: monospace;
+            margin: 10px 0;
+        }
+        .success-popup .overlay-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1999;
+            display: none;
+            backdrop-filter: blur(4px);
+        }
+        .success-popup .overlay-bg.show {
+            display: block;
+        }
+        .success-popup .close-btn {
+            background: #10b981;
+            color: white;
+            border: none;
+            padding: 10px 40px;
+            border-radius: 30px;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 10px;
+        }
+        .success-popup .close-btn:hover {
+            background: #059669;
+            transform: scale(1.05);
+        }
+
+        /* ===== SYNC STATUS ===== */
+        #syncStatus {
+            font-size: 0.75rem;
+            color: #6b7280;
+            margin-top: 0.25rem;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ============================================================ -->
+    <!--  SUCCESS POPUP                                               -->
+    <!-- ============================================================ -->
+    <div class="success-popup-overlay" id="successOverlay" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:1999;backdrop-filter:blur(4px);"></div>
+    <div class="success-popup" id="successPopup">
+        <div class="icon">🎉</div>
+        <h2>दुकान Ready हो गया!</h2>
+        <p>आपकी दुकान सफलतापूर्वक बन गई है</p>
+        <div class="code-box" id="popupShopCode">SHOP1234</div>
+        <p style="font-size:0.85rem;color:#6b7280;">इस कोड से एडमिन पैनल में लॉगिन करें</p>
+        <button class="close-btn" onclick="closeSuccessPopup()">ठीक है, समझ गया 🚀</button>
+    </div>
+
+    <!-- ============================================================ -->
+    <!--  FIXED WHATSAPP BUTTON                                       -->
+    <!-- ============================================================ -->
+    <a href="https://wa.me/918797221991?text=नमस्ते, मुझे आपकी मदद चाहिए" target="_blank" class="whatsapp-float">
+        <i class="fab fa-whatsapp"></i>
+        <span class="hidden sm:inline">संपर्क करें</span>
+    </a>
+
+    <!-- ============================================================ -->
+    <!--  NAVIGATION                                                  -->
+    <!-- ============================================================ -->
+    <nav class="bg-white shadow-md sticky top-0 z-50 border-b border-gray-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center gap-2">
+                    <i class="fas fa-store text-indigo-600 text-2xl"></i>
+                    <span class="font-bold text-xl text-gray-800">Apna<span class="text-indigo-600">Market</span></span>
+                </div>
+                <div class="flex gap-2 sm:gap-4">
+                    <button data-page="front" class="nav-btn px-4 py-2 rounded-full text-sm font-medium bg-indigo-600 text-white shadow-sm transition hover:bg-indigo-700">
+                        <i class="fas fa-home mr-1"></i> होम
+                    </button>
+                    <button data-page="newshop" class="nav-btn px-4 py-2 rounded-full text-sm font-medium bg-emerald-500 text-white shadow-sm transition hover:bg-emerald-600">
+                        <i class="fas fa-plus-circle mr-1"></i> नई दुकान
+                    </button>
+                    <button data-page="admin" class="nav-btn px-4 py-2 rounded-full text-sm font-medium bg-amber-500 text-white shadow-sm transition hover:bg-amber-600">
+                        <i class="fas fa-crown mr-1"></i> एडमिन
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- ============================================================ -->
+    <!--  PAGE 1 – FRONT PAGE                                         -->
+    <!-- ============================================================ -->
+    <div id="page-front" class="page active max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-10">
+
+        <!-- Loading -->
+        <div id="frontLoading" class="text-center py-12">
+            <div class="loading-spinner"></div>
+            <p class="text-gray-500 mt-3">डेटा लोड हो रहा है...</p>
+        </div>
+
+        <div id="frontContent" style="display:none;">
+            <!-- Search Bar -->
+            <div class="bg-white rounded-2xl shadow-lg p-5 border border-gray-100 mb-6">
+                <div class="flex flex-col sm:flex-row gap-3">
+                    <div class="flex-1 relative">
+                        <i class="fas fa-search absolute left-4 top-3.5 text-gray-400"></i>
+                        <input type="text" id="searchLocation" placeholder="जिला या PIN कोड (जैसे: जयपुर, 302001)" 
+                               class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-400 outline-none transition" />
+                    </div>
+                    <button id="searchNearbyBtn" class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-xl transition shadow-md flex items-center justify-center gap-2">
+                        <i class="fas fa-location-dot"></i> खोजें
+                    </button>
+                    <button id="clearSearchBtn" class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-3 rounded-xl transition">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div id="searchResultInfo" class="mt-2 text-sm text-gray-500 hidden">
+                    <i class="fas fa-map-pin text-indigo-500"></i> <span id="searchLocationDisplay"></span> के आसपास की दुकानें
+                </div>
+            </div>
+
+            <!-- Current Shop -->
+            <div id="currentShopSection" class="mb-8 hidden">
+                <div class="flex items-center gap-3 mb-3">
+                    <i class="fas fa-store text-indigo-600 text-2xl"></i>
+                    <h2 class="text-xl md:text-2xl font-bold text-gray-800" id="currentShopName">दुकान का नाम</h2>
+                    <span id="currentShopStatus" class="text-xs px-3 py-1 rounded-full">स्थिति</span>
+                </div>
+                <p class="text-sm text-gray-500 mb-3" id="currentShopInfo">👤 मालिक • 📍 पता</p>
+                <div id="currentShopContent"></div>
+            </div>
+
+            <!-- Nearby Shops -->
+            <div id="nearbyShopsSection">
+                <div class="flex items-center gap-3 mb-4">
+                    <i class="fas fa-store-alt text-emerald-500 text-xl"></i>
+                    <h2 class="text-xl md:text-2xl font-bold text-gray-800">आसपास की दुकानें</h2>
+                    <span id="nearbyCount" class="bg-gray-100 text-gray-600 text-xs px-3 py-1 rounded-full">0 दुकानें</span>
+                </div>
+                <div id="nearbyShopsContainer" class="space-y-6"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!--  PAGE 2 – NEW SHOP                                           -->
+    <!-- ============================================================ -->
+    <div id="page-newshop" class="page max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-10">
+        <div class="bg-white rounded-2xl shadow-xl p-6 md:p-8 border border-gray-100">
+            <h2 class="text-2xl md:text-3xl font-extrabold text-gray-800 flex items-center gap-3 mb-6">
+                <i class="fas fa-store text-emerald-500"></i> नई दुकान बनाएं
+            </h2>
+            <p class="text-gray-500 mb-6">बिना लॉगिन के अपनी डिजिटल दुकान शुरू करें</p>
+
+            <form id="shopRegisterForm" class="space-y-5">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-600">दुकान का नाम *</label>
+                        <input type="text" id="shopName" required placeholder="फिटनेस स्टोर" class="w-full mt-1 px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-400 outline-none transition" />
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-600">मालिक का नाम *</label>
+                        <input type="text" id="ownerName" required placeholder="राहुल शर्मा" class="w-full mt-1 px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-400 outline-none transition" />
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-600">पता (जिला/शहर) *</label>
+                    <input type="text" id="shopAddress" required placeholder="जयपुर, राजस्थान" class="w-full mt-1 px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-400 outline-none transition" />
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-600">PIN Code *</label>
+                    <input type="text" id="shopPincode" required placeholder="302001" class="w-full mt-1 px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-400 outline-none transition" />
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-600">व्हाट्सएप नंबर *</label>
+                    <input type="tel" id="whatsappNumber" required placeholder="+91 9876543210" class="w-full mt-1 px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-400 outline-none transition" />
+                </div>
+
+                <div class="bg-gradient-to-r from-amber-50 to-orange-50 p-5 rounded-xl border border-amber-200">
+                    <label class="block text-sm font-medium text-amber-700 flex items-center gap-2">
+                        <i class="fas fa-tags text-amber-500"></i> ऑफर / डिस्काउंट (वैकल्पिक)
+                    </label>
+                    <div class="flex flex-wrap items-center gap-3 mt-2">
+                        <input type="text" id="offerText" placeholder="जैसे: 20% छूट" class="flex-1 px-4 py-2 border border-amber-300 rounded-xl focus:ring-2 focus:ring-amber-400 outline-none min-w-[180px]" />
+                        <input type="color" id="offerColor" value="#f59e0b" class="w-12 h-10 rounded-lg border-0 cursor-pointer" />
+                        <span class="text-sm text-gray-500">रंग</span>
+                    </div>
+                    <div class="mt-3 flex items-center gap-3 flex-wrap">
+                        <span class="text-sm font-medium text-gray-600">पूर्वावलोकन:</span>
+                        <span id="offerPreview" class="offer-badge" style="background:#f59e0b;">
+                            <i class="fas fa-bolt"></i> 20% छूट
+                        </span>
+                    </div>
+                </div>
+
+                <button type="submit" id="registerShopBtn" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-4 px-4 rounded-xl transition shadow-lg hover:shadow-xl flex items-center justify-center gap-2 text-lg">
+                    <i class="fas fa-rocket"></i> दुकान बनाएं
+                </button>
+            </form>
+
+            <div id="registrationResult" class="mt-6 hidden">
+                <div class="bg-green-50 border-l-4 border-green-500 p-5 rounded-xl">
+                    <p class="text-green-700 font-bold text-lg"><i class="fas fa-check-circle"></i> दुकान बन गई!</p>
+                    <p class="text-sm text-gray-600 mt-1">आपका यूनिक शॉप कोड:</p>
+                    <div class="bg-white inline-block px-6 py-2 rounded-full text-2xl font-mono font-bold text-emerald-700 border border-emerald-200 mt-1 shadow-sm" id="generatedShopCode">SHOP1234</div>
+                    <p class="text-xs text-gray-500 mt-2">इस कोड से एडमिन पैनल में लॉगिन करें</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!--  PAGE 3 – ADMIN PANEL                                        -->
+    <!-- ============================================================ -->
+    <div id="page-admin" class="page max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-10">
+        <div class="bg-white rounded-2xl shadow-xl p-6 md:p-8 border border-gray-100">
+            <h2 class="text-2xl md:text-3xl font-extrabold text-gray-800 flex items-center gap-3 mb-6">
+                <i class="fas fa-user-shield text-amber-600"></i> एडमिन डैशबोर्ड
+            </h2>
+
+            <div id="adminLoginBox" class="bg-gray-50 p-6 rounded-xl">
+                <p class="text-sm text-gray-500 mb-3">एडमिन एक्सेस के लिए पासवर्ड डालें</p>
+                <div class="flex flex-col sm:flex-row gap-3">
+                    <div class="admin-password-field flex-1">
+                        <input type="password" id="adminPasswordInput" placeholder="••••••••" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-amber-400 outline-none" />
+                        <i class="fas fa-lock absolute right-3 top-4 text-gray-400"></i>
+                    </div>
+                    <button id="adminLoginBtn" class="bg-amber-600 hover:bg-amber-700 text-white font-semibold px-6 py-3 rounded-xl transition shadow-md flex items-center justify-center gap-2">
+                        <i class="fas fa-sign-in-alt"></i> लॉगिन
+                    </button>
+                </div>
+                <div id="adminLoginError" class="text-red-500 text-sm mt-2 hidden">❌ गलत पासवर्ड</div>
+            </div>
+
+            <div id="adminControls" class="hidden mt-6">
+                <div class="bg-gradient-to-r from-amber-50 to-orange-50 p-5 rounded-xl border border-amber-200 mb-6">
+                    <h3 class="text-lg font-bold text-gray-700 mb-3"><i class="fas fa-sliders-h text-amber-500"></i> मास्टर कंट्रोल</h3>
+                    <div class="flex flex-wrap gap-3">
+                        <button id="shopStatusOn" class="px-5 py-2 bg-green-500 hover:bg-green-600 text-white rounded-xl transition shadow">✅ सभी ON</button>
+                        <button id="shopStatusOff" class="px-5 py-2 bg-red-500 hover:bg-red-600 text-white rounded-xl transition shadow">❌ सभी OFF</button>
+                        <button id="addSampleProducts" class="px-5 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-xl transition shadow">➕ नमूना प्रोडक्ट</button>
+                        <button id="syncDataBtn" class="px-5 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-xl transition shadow">🔄 सिंक करें</button>
+                    </div>
+                    <p id="currentStatusDisplay" class="text-sm mt-3 text-gray-600">वर्तमान: <span class="font-bold text-green-600">सभी ON</span></p>
+                    <div id="syncStatus"></div>
+                </div>
+
+                <h4 class="font-bold text-gray-700 text-lg mb-3 flex items-center gap-2">
+                    <i class="fas fa-shop text-amber-500"></i> सभी दुकानें (प्रबंधन)
+                </h4>
+                <div id="adminShopList" class="space-y-6 max-h-[600px] overflow-y-auto pr-2"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!--  MODAL                                                       -->
+    <!-- ============================================================ -->
+    <div class="modal-overlay" id="productModal">
+        <div class="modal-box">
+            <div class="flex justify-between items-start mb-4">
+                <h3 class="text-xl font-bold text-gray-800" id="modalProductName">प्रोडक्ट</h3>
+                <button id="closeModalBtn" class="text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
+            </div>
+            <img id="modalProductImage" src="" alt="product" class="w-full h-48 object-cover rounded-xl mb-3" />
+            <p class="text-lg font-bold text-indigo-600" id="modalProductPrice">₹0</p>
+            <p class="text-sm text-gray-500" id="modalProductOffer"></p>
+            <p class="text-sm text-gray-400 mt-2" id="modalShopInfo">दुकान: </p>
+            <div class="mt-4 flex gap-3">
+                <a id="modalMissCallBtn" href="tel:+919999999999" class="flex-1 bg-red-500 hover:bg-red-600 text-white text-center py-3 rounded-xl transition font-semibold">
+                    <i class="fas fa-phone"></i> मिस्ड कॉल
+                </a>
+                <a id="modalWhatsAppBtn" href="#" target="_blank" class="flex-1 bg-green-500 hover:bg-green-600 text-white text-center py-3 rounded-xl transition font-semibold">
+                    <i class="fab fa-whatsapp"></i> WhatsApp
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!--  FOOTER                                                      -->
+    <!-- ============================================================ -->
+    <footer class="bg-gray-900 text-white py-5 mt-8">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <p class="text-sm font-light tracking-wide">
+                <i class="fas fa-brain text-yellow-300 mr-1"></i>
+                "the victory of wisdom" — <span class="font-medium">अक्ल की जीत</span>
+            </p>
+            <p class="text-xs text-gray-400 mt-1">© 2026 Apna Market Portal | WhatsApp: 8797221991 | Firebase 🔥</p>
+        </div>
+    </footer>
+
+    <!-- ============================================================ -->
+    <!--  JAVASCRIPT – Complete Firebase Integration                 -->
+    <!-- ============================================================ -->
+    <script>
+        // ================================================================
+        //  FIREBASE CONFIGURATION
+        // ================================================================
+        const firebaseConfig = {
+            apiKey: "AIzaSyA2S1ycLthPrWQzkvcoy9sGtqD-_uq_UZM",
+            authDomain: "apna-market-10099.firebaseapp.com",
+            projectId: "apna-market-10099",
+            storageBucket: "apna-market-10099.firebasestorage.app",
+            messagingSenderId: "729708328870",
+            appId: "1:729708328870:web:4121e85411deb637804167",
+            measurementId: "G-HH7XNCX4B5"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        const analytics = firebase.analytics();
+
+        console.log("🔥 Firebase Connected:", firebaseConfig.projectId);
+
+        // ================================================================
+        //  APPLICATION STATE
+        // ================================================================
+        const ADMIN_PASSWORD = "tamir@lI00769";
+        const ADMIN_WHATSAPP = "918797221991";
+
+        let isAdminLoggedIn = false;
+        let shops = [];
+        let currentShopCode = null;
+        let searchQuery = '';
+        let isDataLoaded = false;
+
+        // ================================================================
+        //  DOM REFS
+        // ================================================================
+        const $ = id => document.getElementById(id);
+        const pages = document.querySelectorAll('.page');
+        const navBtns = document.querySelectorAll('.nav-btn');
+
+        // ================================================================
+        //  PAGE NAVIGATION
+        // ================================================================
+        navBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const pageId = btn.dataset.page;
+                pages.forEach(p => p.classList.remove('active'));
+                const target = document.getElementById('page-' + pageId);
+                if (target) target.classList.add('active');
+                if (pageId === 'front' && isDataLoaded) renderFrontPage();
+                if (pageId === 'admin' && isAdminLoggedIn) renderAdminShopList();
+            });
+        });
+
+        // ================================================================
+        //  HELPER FUNCTIONS
+        // ================================================================
+        function getDateCount(createdDate) {
+            if (!createdDate) return 0;
+            const now = new Date();
+            const created = new Date(createdDate);
+            const diffTime = Math.abs(now - created);
+            return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        }
+
+        function formatDate(dateStr) {
+            if (!dateStr) return 'नया';
+            const d = new Date(dateStr);
+            return d.toLocaleDateString('hi-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+        }
+
+        function generateShopCode() {
+            return 'SHOP' + (1000 + Math.floor(Math.random() * 9000));
+        }
+
+        function generateProductId() {
+            return 'p_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
+        }
+
+        function getDefaultImage(seed) {
+            return 'https://picsum.photos/seed/' + seed + '/300/200';
+        }
+
+        // ================================================================
+        //  SUCCESS POPUP
+        // ================================================================
+        function showSuccessPopup(shopCode) {
+            document.getElementById('popupShopCode').textContent = shopCode;
+            document.getElementById('successPopup').classList.add('show');
+            document.getElementById('successOverlay').style.display = 'block';
+            // Play sound effect (optional)
+            try {
+                const audio = new Audio('data:audio/wav;base64,UklGRnoAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoAAACBhYqFhYqFhYqFhYqFhYqFhYqFhYqFhYqFhYqFhYqFhYqFhYqFhYqFhYqFhYqFhYqFhYqFhYqFhYqFhYqFhYqFhYqFhYqFhYqFhYqFhYqFhYqFhYqFhYqFhYqFhYqFhYqFhYqFhYqFhYqFhYqFhYqFhYqF');
+                audio.play();
+            } catch (e) {}
+        }
+
+        function closeSuccessPopup() {
+            document.getElementById('successPopup').classList.remove('show');
+            document.getElementById('successOverlay').style.display = 'none';
+        }
+
+        // ================================================================
+        //  LOAD DATA FROM FIRESTORE
+        // ================================================================
+        async function loadAllShops(showLoading = true) {
+            if (showLoading) {
+                const loading = document.getElementById('frontLoading');
+                if (loading) loading.style.display = 'block';
+                const content = document.getElementById('frontContent');
+                if (content) content.style.display = 'none';
+            }
+
+            try {
+                const snapshot = await db.collection('shops').get();
+                shops = [];
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    shops.push({
+                        id: doc.id,
+                        shopCode: doc.id,
+                        ...data,
+                        products: data.products || []
+                    });
+                });
+                shops.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+                console.log(`✅ ${shops.length} shops loaded from Firebase`);
+                isDataLoaded = true;
+                localStorage.setItem('apna_shops', JSON.stringify(shops));
+            } catch (error) {
+                console.error("❌ Error loading shops:", error);
+                // Try to load from localStorage as fallback
+                const cached = localStorage.getItem('apna_shops');
+                if (cached) {
+                    try {
+                        shops = JSON.parse(cached);
+                        console.log(`📦 ${shops.length} shops loaded from cache`);
+                        isDataLoaded = true;
+                    } catch (e) {
+                        generateDummyData();
+                    }
+                } else {
+                    generateDummyData();
+                }
+            }
+
+            if (showLoading) {
+                const loading = document.getElementById('frontLoading');
+                if (loading) loading.style.display = 'none';
+                const content = document.getElementById('frontContent');
+                if (content) content.style.display = 'block';
+            }
+            return shops;
+        }
+
+        async function saveShopToFirebase(shopData) {
+            try {
+                await db.collection('shops').doc(shopData.shopCode).set(shopData);
+                console.log("✅ Shop saved to Firebase:", shopData.shopCode);
+                // Update local cache
+                shops.push(shopData);
+                localStorage.setItem('apna_shops', JSON.stringify(shops));
+                return true;
+            } catch (error) {
+                console.error("❌ Error saving shop to Firebase:", error);
+                // If Firebase fails, save locally only
+                shops.push(shopData);
+                localStorage.setItem('apna_shops', JSON.stringify(shops));
+                console.log("📦 Shop saved locally only");
+                return true;
+            }
+        }
+
+        async function updateShopInFirebase(shopCode, data) {
+            try {
+                await db.collection('shops').doc(shopCode).update(data);
+                console.log("✅ Shop updated:", shopCode);
+                localStorage.setItem('apna_shops', JSON.stringify(shops));
+                return true;
+            } catch (error) {
+                console.error("❌ Error updating shop:", error);
+                return false;
+            }
+        }
+
+        async function deleteShopFromFirebase(shopCode) {
+            try {
+                await db.collection('shops').doc(shopCode).delete();
+                console.log("✅ Shop deleted:", shopCode);
+                localStorage.setItem('apna_shops', JSON.stringify(shops));
+                return true;
+            } catch (error) {
+                console.error("❌ Error deleting shop:", error);
+                return false;
+            }
+        }
+
+        // ================================================================
+        //  DUMMY DATA (Fallback)
+        // ================================================================
+        function generateDummyData() {
+            const districts = ['जयपुर', 'दिल्ली', 'मुंबई', 'बैंगलोर', 'चेन्नई', 'अहमदाबाद'];
+            const pincodes = ['302001', '110001', '400001', '560001', '600001', '380001'];
+            const shopNames = ['फिटनेस हब', 'प्रोटीन स्टोर', 'योगा शॉप', 'जिम गियर', 'वेलनेस सेंटर', 'स्पोर्ट्स जोन'];
+            const owners = ['अमित कुमार', 'प्रिया सिंह', 'राजेश वर्मा', 'स्नेहा पटेल', 'विकास राठौर', 'नीता शर्मा'];
+            const whatsappNumbers = ['+91 98765 43210', '+91 98765 43211', '+91 98765 43212', '+91 98765 43213',
+                '+91 98765 43214', '+91 98765 43215'
+            ];
+            shops = [];
+            const now = new Date();
+            for (let i = 0; i < 6; i++) {
+                const code = generateShopCode();
+                const daysAgo = Math.floor(Math.random() * 30);
+                const createdDate = new Date(now);
+                createdDate.setDate(createdDate.getDate() - daysAgo);
+                const shopProducts = [];
+                const productNames = ['प्रोटीन व्हे', 'जिम ग्लव्स', 'योगा मैट', 'डंबल सेट'];
+                const prices = ['₹2,499', '₹599', '₹899', '₹3,999'];
+                const offers = ['20% ऑफ', 'BOGO', '₹100 कैशबैक', '15% छूट'];
+                const count = 2 + Math.floor(Math.random() * 2);
+                for (let j = 0; j < count && j < productNames.length; j++) {
+                    shopProducts.push({
+                        id: generateProductId(),
+                        name: productNames[j] + (j > 1 ? ' ' + (j + 1) : ''),
+                        price: prices[j],
+                        image: getDefaultImage(code + '_' + j),
+                        offer: offers[j]
+                    });
+                }
+                shops.push({
+                    shopCode: code,
+                    shopName: shopNames[i] + ' ' + (i + 1),
+                    ownerName: owners[i],
+                    shopAddress: districts[i] + ', राजस्थान',
+                    district: districts[i],
+                    pincode: pincodes[i],
+                    whatsappNumber: whatsappNumbers[i],
+                    status: i % 2 === 0 ? 'ON' : 'OFF',
+                    offer: i % 2 === 0 ? '🔥 25% छूट' : '🎁 फ्री डिलीवरी',
+                    offerColor: ['#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316'][i],
+                    createdAt: createdDate.toISOString(),
+                    products: shopProducts
+                });
+            }
+            localStorage.setItem('apna_shops', JSON.stringify(shops));
+            isDataLoaded = true;
+        }
+
+        // ================================================================
+        //  RENDER SHOP CONTENT
+        // ================================================================
+        function renderShopContent(shop, containerId) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+
+            if (!shop) {
+                container.innerHTML = `<div class="text-center py-8 text-gray-500">दुकान नहीं मिली</div>`;
+                return;
+            }
+
+            if (shop.status === 'OFF') {
+                container.innerHTML = `
+                        <div class="shop-off-overlay">
+                            <i class="fas fa-store-slash"></i>
+                            <h3>⛔ यह दुकान वर्तमान में बंद है</h3>
+                            <p>कृपया एडमिन से WhatsApp पर संपर्क करें</p>
+                            <a href="https://wa.me/${ADMIN_WHATSAPP}?text=नमस्ते, दुकान ${shop.shopCode} (${shop.shopName}) बंद दिख रही है" 
+                               target="_blank" 
+                               class="whatsapp-btn">
+                                <i class="fab fa-whatsapp"></i> एडमिन से संपर्क करें
+                            </a>
+                        </div>
+                    `;
+                return;
+            }
+
+            const products = shop.products || [];
+            if (products.length === 0) {
+                container.innerHTML = `
+                        <div class="text-center py-8 bg-gray-50 rounded-xl border border-gray-200">
+                            <i class="fas fa-box-open text-3xl text-gray-300 mb-2 block"></i>
+                            <p class="text-gray-500">इस दुकान में अभी कोई प्रोडक्ट नहीं है</p>
+                        </div>
+                    `;
+                return;
+            }
+
+            container.innerHTML = `
+                    <div class="horizontal-scroll">
+                        ${products.map(p => `
+                            <div class="product-card bg-gray-50 border border-gray-200 rounded-xl p-3 shadow-sm hover:shadow-lg transition" 
+                                 onclick="openProductModal('${shop.shopCode}', '${p.id}')">
+                                <img src="${p.image || getDefaultImage(shop.shopCode + '_' + p.id)}" alt="${p.name}" class="w-full h-28 object-cover rounded-lg" />
+                                <h4 class="font-bold text-gray-800 text-sm mt-2 truncate">${p.name}</h4>
+                                <p class="text-indigo-600 font-bold text-sm">${p.price}</p>
+                                ${p.offer ? `<span class="offer-badge text-xs mt-1"><i class="fas fa-bolt"></i> ${p.offer}</span>` : ''}
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+        }
+
+        // ================================================================
+        //  RENDER FRONT PAGE
+        // ================================================================
+        async function renderFrontPage() {
+            if (!isDataLoaded) {
+                await loadAllShops(true);
+            }
+
+            const urlParams = new URLSearchParams(window.location.search);
+            const shopCode = urlParams.get('shop');
+            currentShopCode = shopCode && shops.find(s => s.shopCode === shopCode) ? shopCode : null;
+
+            if (!currentShopCode && shops.length > 0) {
+                const firstOn = shops.find(s => s.status === 'ON');
+                currentShopCode = firstOn ? firstOn.shopCode : shops[0].shopCode;
+            }
+
+            // Current Shop
+            const currentShop = shops.find(s => s.shopCode === currentShopCode);
+            const currentSection = document.getElementById('currentShopSection');
+            if (currentShop) {
+                currentSection.classList.remove('hidden');
+                document.getElementById('currentShopName').textContent = currentShop.shopName || 'दुकान';
+                const statusText = currentShop.status === 'ON' ? '🟢 खुला' : '🔴 बंद';
+                const statusClass = currentShop.status === 'ON' ?
+                    'bg-green-100 text-green-700' :
+                    'bg-red-100 text-red-700';
+                document.getElementById('currentShopStatus').textContent = statusText;
+                document.getElementById('currentShopStatus').className =
+                    `text-xs px-3 py-1 rounded-full ${statusClass}`;
+                document.getElementById('currentShopInfo').textContent =
+                    `👤 ${currentShop.ownerName || 'मालिक'} • 📍 ${currentShop.district || ''}, PIN: ${currentShop.pincode || ''}`;
+
+                renderShopContent(currentShop, 'currentShopContent');
+            } else {
+                currentSection.classList.add('hidden');
+            }
+
+            // Nearby Shops
+            renderNearbyShops();
+        }
+
+        // ================================================================
+        //  RENDER NEARBY SHOPS
+        // ================================================================
+        function renderNearbyShops() {
+            const container = document.getElementById('nearbyShopsContainer');
+            if (!container) return;
+
+            let nearbyShops = shops.filter(s => s.shopCode !== currentShopCode);
+
+            if (searchQuery.trim()) {
+                const query = searchQuery.trim().toLowerCase();
+                nearbyShops = nearbyShops.filter(s =>
+                    (s.district || '').toLowerCase().includes(query) ||
+                    (s.pincode || '').includes(query) ||
+                    (s.shopAddress || '').toLowerCase().includes(query)
+                );
+                document.getElementById('searchResultInfo').classList.remove('hidden');
+                document.getElementById('searchLocationDisplay').textContent = searchQuery;
+            } else {
+                document.getElementById('searchResultInfo').classList.add('hidden');
+            }
+
+            if (nearbyShops.length === 0) {
+                container.innerHTML = `
+                        <div class="text-center py-10 bg-gray-50 rounded-2xl border border-gray-200">
+                            <i class="fas fa-store-slash text-4xl text-gray-300 mb-2 block"></i>
+                            <p class="text-gray-500">${searchQuery ? 'इस क्षेत्र में कोई दुकान नहीं मिली' : 'कोई अन्य दुकान उपलब्ध नहीं'}</p>
+                        </div>
+                    `;
+                document.getElementById('nearbyCount').textContent = '0 दुकानें';
+                return;
+            }
+
+            document.getElementById('nearbyCount').textContent = nearbyShops.length + ' दुकानें';
+
+            container.innerHTML = nearbyShops.map(shop => {
+                const isOff = shop.status === 'OFF';
+                const products = shop.products || [];
+                return `
+                        <div class="bg-white rounded-2xl shadow-lg p-5 border ${isOff ? 'border-red-100' : 'border-gray-100'}">
+                            <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-3">
+                                <div>
+                                    <h3 class="text-xl font-bold text-gray-800 flex items-center gap-2">
+                                        <i class="fas fa-store text-emerald-500"></i> ${shop.shopName || 'दुकान'}
+                                        ${isOff ? '<span class="bg-red-100 text-red-700 text-xs px-3 py-1 rounded-full">🔴 बंद</span>' : '<span class="bg-green-100 text-green-700 text-xs px-3 py-1 rounded-full">🟢 खुला</span>'}
+                                    </h3>
+                                    <p class="text-sm text-gray-500">👤 ${shop.ownerName || 'मालिक'} • 📍 ${shop.district || ''}, PIN: ${shop.pincode || ''}</p>
+                                    <p class="text-xs text-gray-400"><i class="far fa-calendar-alt"></i> ${formatDate(shop.createdAt)} • ${getDateCount(shop.createdAt)} दिन पहले</p>
+                                    ${shop.offer ? `<span class="offer-badge text-xs mt-1" style="background:${shop.offerColor || '#f59e0b'};"><i class="fas fa-tag"></i> ${shop.offer}</span>` : ''}
+                                </div>
+                                ${isOff ? `
+                                    <a href="https://wa.me/${ADMIN_WHATSAPP}?text=नमस्ते, दुकान ${shop.shopCode} (${shop.shopName}) बंद है" 
+                                       target="_blank" 
+                                       class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-xl text-sm transition flex items-center gap-2">
+                                        <i class="fas fa-exclamation-circle"></i> एडमिन से संपर्क करें
+                                    </a>
+                                ` : `
+                                    <a href="https://wa.me/${(shop.whatsappNumber || '').replace(/[^0-9]/g,'') || '919999999999'}?text=नमस्ते, मुझे ${shop.shopName} से सामान चाहिए" 
+                                       target="_blank" 
+                                       class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-xl text-sm transition flex items-center gap-2">
+                                        <i class="fab fa-whatsapp"></i> संपर्क करें
+                                    </a>
+                                `}
+                            </div>
+                            <div id="nearby_${shop.shopCode}">
+                                ${isOff ? `
+                                    <div class="shop-off-overlay" style="padding:1rem;min-height:80px;">
+                                        <i class="fas fa-store-slash" style="font-size:1.5rem;"></i>
+                                        <h3 style="font-size:1rem;">⛔ यह दुकान बंद है</h3>
+                                        <p style="font-size:0.85rem;">कृपया एडमिन से संपर्क करें</p>
+                                        <a href="https://wa.me/${ADMIN_WHATSAPP}?text=नमस्ते, दुकान ${shop.shopCode} बंद है" 
+                                           target="_blank" 
+                                           class="whatsapp-btn" style="padding:0.3rem 1rem;font-size:0.85rem;">
+                                            <i class="fab fa-whatsapp"></i> एडमिन
+                                        </a>
+                                    </div>
+                                ` : `
+                                    ${products.length === 0 ? `
+                                        <div class="text-center py-4 bg-gray-50 rounded-xl border border-gray-200">
+                                            <p class="text-gray-500 text-sm">कोई प्रोडक्ट नहीं</p>
+                                        </div>
+                                    ` : `
+                                        <div class="horizontal-scroll">
+                                            ${products.map(p => `
+                                                <div class="product-card bg-gray-50 border border-gray-200 rounded-xl p-3 shadow-sm hover:shadow-lg transition" 
+                                                     onclick="openProductModal('${shop.shopCode}', '${p.id}')">
+                                                    <img src="${p.image || getDefaultImage(shop.shopCode + '_' + p.id)}" alt="${p.name}" class="w-full h-28 object-cover rounded-lg" />
+                                                    <h4 class="font-bold text-gray-800 text-sm mt-2 truncate">${p.name}</h4>
+                                                    <p class="text-indigo-600 font-bold text-sm">${p.price}</p>
+                                                    ${p.offer ? `<span class="offer-badge text-xs mt-1"><i class="fas fa-bolt"></i> ${p.offer}</span>` : ''}
+                                                </div>
+                                            `).join('')}
+                                        </div>
+                                    `}
+                                `}
+                            </div>
+                        </div>
+                    `;
+            }).join('');
+        }
+
+        // ================================================================
+        //  SEARCH FUNCTIONS
+        // ================================================================
+        document.getElementById('searchNearbyBtn').addEventListener('click', function() {
+            const query = document.getElementById('searchLocation').value.trim();
+            if (!query) {
+                alert('कृपया जिला या PIN कोड डालें');
+                return;
+            }
+            searchQuery = query;
+            renderNearbyShops();
+        });
+
+        document.getElementById('searchLocation').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                document.getElementById('searchNearbyBtn').click();
+            }
+        });
+
+        document.getElementById('clearSearchBtn').addEventListener('click', function() {
+            document.getElementById('searchLocation').value = '';
+            searchQuery = '';
+            renderNearbyShops();
+        });
+
+        // ================================================================
+        //  PRODUCT MODAL
+        // ================================================================
+        function openProductModal(shopCode, productId) {
+            const shop = shops.find(s => s.shopCode === shopCode);
+            if (!shop) {
+                alert('⚠️ दुकान नहीं मिली');
+                return;
+            }
+            if (shop.status === 'OFF') {
+                alert('⚠️ यह दुकान बंद है, प्रोडक्ट नहीं देख सकते');
+                return;
+            }
+            const product = (shop.products || []).find(p => p.id === productId);
+            if (!product) {
+                alert('⚠️ प्रोडक्ट नहीं मिला');
+                return;
+            }
+
+            const modal = document.getElementById('productModal');
+            document.getElementById('modalProductName').textContent = product.name || 'प्रोडक्ट';
+            document.getElementById('modalProductImage').src = product.image || getDefaultImage(shopCode + '_' + productId);
+            document.getElementById('modalProductPrice').textContent = product.price || '₹0';
+            document.getElementById('modalProductOffer').textContent = product.offer ? '🎯 ' + product.offer : '';
+            document.getElementById('modalShopInfo').textContent =
+                '🏪 ' + (shop.shopName || 'दुकान') + ' • ' + (shop.ownerName || 'मालिक') +
+                ' • 📍 ' + (shop.district || '');
+
+            const phoneDigits = (shop.whatsappNumber || '').replace(/[^0-9]/g, '') || '919999999999';
+            document.getElementById('modalMissCallBtn').href = 'tel:+' + phoneDigits;
+            document.getElementById('modalWhatsAppBtn').href =
+                'https://wa.me/' + phoneDigits + '?text=नमस्ते, मुझे ' + product.name + ' के बारे में जानकारी चाहिए';
+
+            modal.classList.add('active');
+        }
+
+        document.getElementById('closeModalBtn').addEventListener('click', () => {
+            document.getElementById('productModal').classList.remove('active');
+        });
+        document.getElementById('productModal').addEventListener('click', function(e) {
+            if (e.target === this) this.classList.remove('active');
+        });
+
+        window.openProductModal = openProductModal;
+
+        // ================================================================
+        //  NEW SHOP REGISTRATION (FIXED)
+        // ================================================================
+        document.getElementById('shopRegisterForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const btn = document.getElementById('registerShopBtn');
+            btn.innerHTML = '<div class="loading-spinner" style="width:20px;height:20px;"></div> सेव हो रहा...';
+            btn.disabled = true;
+
+            try {
+                // Get all form values
+                const shopName = document.getElementById('shopName').value.trim();
+                const ownerName = document.getElementById('ownerName').value.trim();
+                const shopAddress = document.getElementById('shopAddress').value.trim();
+                const pincode = document.getElementById('shopPincode').value.trim();
+                const whatsappNumber = document.getElementById('whatsappNumber').value.trim();
+                const offerText = document.getElementById('offerText').value.trim();
+                const offerColor = document.getElementById('offerColor').value;
+
+                // Validate
+                if (!shopName || !ownerName || !shopAddress || !pincode || !whatsappNumber) {
+                    alert('❌ कृपया सभी आवश्यक फील्ड भरें');
+                    btn.innerHTML = '<i class="fas fa-rocket"></i> दुकान बनाएं';
+                    btn.disabled = false;
+                    return;
+                }
+
+                // Generate unique shop code
+                const code = generateShopCode();
+                const district = shopAddress.split(',')[0].trim();
+
+                // Create shop data
+                const newShop = {
+                    shopCode: code,
+                    shopName: shopName,
+                    ownerName: ownerName,
+                    shopAddress: shopAddress,
+                    district: district,
+                    pincode: pincode,
+                    whatsappNumber: whatsappNumber,
+                    status: 'ON',
+                    offer: offerText || '🎉 नई दुकान',
+                    offerColor: offerColor || '#f59e0b',
+                    createdAt: new Date().toISOString(),
+                    products: []
+                };
+
+                console.log("📦 Saving new shop:", newShop);
+
+                // Save to Firebase
+                const success = await saveShopToFirebase(newShop);
+
+                if (success) {
+                    // Show success popup
+                    showSuccessPopup(code);
+
+                    // Reset form
+                    this.reset();
+
+                    // Refresh data
+                    await loadAllShops(false);
+                    await renderFrontPage();
+
+                    if (isAdminLoggedIn) {
+                        await renderAdminShopList();
+                    }
+
+                    console.log("✅ Shop created successfully:", code);
+                } else {
+                    alert('❌ दुकान सेव नहीं हो पाई, कृपया पुनः प्रयास करें');
+                }
+
+            } catch (error) {
+                console.error("❌ Registration error:", error);
+                alert('❌ त्रुटि: ' + error.message);
+            } finally {
+                btn.innerHTML = '<i class="fas fa-rocket"></i> दुकान बनाएं';
+                btn.disabled = false;
+            }
+        });
+
+        // ================================================================
+        //  OFFER PREVIEW
+        // ================================================================
+        document.getElementById('offerText').addEventListener('input', function() {
+            const val = this.value.trim() || 'ऑफर लिखें';
+            const color = document.getElementById('offerColor').value;
+            document.getElementById('offerPreview').textContent = val;
+            document.getElementById('offerPreview').style.background = color;
+        });
+        document.getElementById('offerColor').addEventListener('input', function() {
+            const val = document.getElementById('offerText').value.trim() || 'ऑफर लिखें';
+            document.getElementById('offerPreview').textContent = val;
+            document.getElementById('offerPreview').style.background = this.value;
+        });
+
+        // ================================================================
+        //  ADMIN LOGIN
+        // ================================================================
+        document.getElementById('adminLoginBtn').addEventListener('click', function() {
+            const pass = document.getElementById('adminPasswordInput').value;
+            if (pass === ADMIN_PASSWORD) {
+                isAdminLoggedIn = true;
+                document.getElementById('adminLoginBox').classList.add('hidden');
+                document.getElementById('adminControls').classList.remove('hidden');
+                document.getElementById('adminLoginError').classList.add('hidden');
+                renderAdminShopList();
+                document.getElementById('currentStatusDisplay').innerHTML =
+                    `वर्तमान: <span class="font-bold text-green-600">सभी ON</span>`;
+            } else {
+                document.getElementById('adminLoginError').classList.remove('hidden');
+            }
+        });
+
+        // ================================================================
+        //  ADMIN CONTROLS
+        // ================================================================
+        document.getElementById('shopStatusOn').addEventListener('click', async function() {
+            if (!isAdminLoggedIn) return;
+            if (!confirm('सभी दुकानों को ON करें?')) return;
+            try {
+                const batch = db.batch();
+                shops.forEach(shop => {
+                    const ref = db.collection('shops').doc(shop.shopCode);
+                    batch.update(ref, { status: 'ON' });
+                    shop.status = 'ON';
+                });
+                await batch.commit();
+                localStorage.setItem('apna_shops', JSON.stringify(shops));
+                document.getElementById('currentStatusDisplay').innerHTML =
+                    `वर्तमान: <span class="font-bold text-green-600">सभी ON</span>`;
+                await renderFrontPage();
+                await renderAdminShopList();
+                alert('✅ सभी दुकानें ON कर दी गईं');
+            } catch (error) {
+                alert('❌ त्रुटि: ' + error.message);
+            }
+        });
+
+        document.getElementById('shopStatusOff').addEventListener('click', async function() {
+            if (!isAdminLoggedIn) return;
+            if (!confirm('सभी दुकानों को OFF करें?')) return;
+            try {
+                const batch = db.batch();
+                shops.forEach(shop => {
+                    const ref = db.collection('shops').doc(shop.shopCode);
+                    batch.update(ref, { status: 'OFF' });
+                    shop.status = 'OFF';
+                });
+                await batch.commit();
+                localStorage.setItem('apna_shops', JSON.stringify(shops));
+                document.getElementById('currentStatusDisplay').innerHTML =
+                    `वर्तमान: <span class="font-bold text-red-600">सभी OFF</span>`;
+                await renderFrontPage();
+                await renderAdminShopList();
+                alert('✅ सभी दुकानें OFF कर दी गईं');
+            } catch (error) {
+                alert('❌ त्रुटि: ' + error.message);
+            }
+        });
+
+        document.getElementById('addSampleProducts').addEventListener('click', async function() {
+            if (!isAdminLoggedIn) return;
+            const sampleNames = ['प्रोटीन व्हे', 'जिम ग्लव्स', 'योगा मैट', 'डंबल सेट'];
+            const samplePrices = ['₹2,499', '₹599', '₹899', '₹3,999'];
+            const sampleOffers = ['20% ऑफ', 'BOGO', '₹100 कैशबैक', '15% छूट'];
+
+            try {
+                const batch = db.batch();
+                shops.forEach((shop, idx) => {
+                    if (shop.status === 'ON' && (!shop.products || shop.products.length < 3)) {
+                        if (!shop.products) shop.products = [];
+                        const newProduct = {
+                            id: generateProductId(),
+                            name: sampleNames[idx % sampleNames.length] + ' ' + (shop.products.length + 1),
+                            price: samplePrices[idx % samplePrices.length],
+                            image: getDefaultImage(shop.shopCode + '_' + Date.now()),
+                            offer: sampleOffers[idx % sampleOffers.length]
+                        };
+                        shop.products.push(newProduct);
+                        const ref = db.collection('shops').doc(shop.shopCode);
+                        batch.update(ref, { products: shop.products });
+                    }
+                });
+                await batch.commit();
+                localStorage.setItem('apna_shops', JSON.stringify(shops));
+                await renderFrontPage();
+                await renderAdminShopList();
+                alert('✅ नमूना प्रोडक्ट्स जोड़ दिए गए');
+            } catch (error) {
+                alert('❌ त्रुटि: ' + error.message);
+            }
+        });
+
+        document.getElementById('syncDataBtn').addEventListener('click', async function() {
+            if (!isAdminLoggedIn) return;
+            const status = document.getElementById('syncStatus');
+            status.textContent = '🔄 सिंक हो रहा है...';
+            status.className = 'text-sm text-blue-600';
+            try {
+                await loadAllShops(false);
+                await renderFrontPage();
+                await renderAdminShopList();
+                status.textContent = '✅ सिंक पूरा! ' + new Date().toLocaleTimeString();
+                status.className = 'text-sm text-green-600';
+                setTimeout(() => { status.textContent = '';
+                    status.className = ''; }, 3000);
+            } catch (error) {
+                status.textContent = '❌ सिंक त्रुटि: ' + error.message;
+                status.className = 'text-sm text-red-600';
+            }
+        });
+
+        // ================================================================
+        //  RENDER ADMIN SHOP LIST
+        // ================================================================
+        async function renderAdminShopList() {
+            const container = document.getElementById('adminShopList');
+            if (!container) return;
+
+            await loadAllShops(false);
+
+            if (shops.length === 0) {
+                container.innerHTML =
+                    `<div class="text-center py-10 text-gray-500">कोई दुकान नहीं मिली। नई दुकान बनाएं।</div>`;
+                return;
+            }
+
+            container.innerHTML = shops.map((s) => {
+                const days = getDateCount(s.createdAt);
+                const shopLink = `https://yourapp.com/shop?code=${s.shopCode}`;
+                const isOff = s.status === 'OFF';
+                const products = s.products || [];
+
+                return `
+                        <div class="bg-white border ${isOff ? 'border-red-200 bg-red-50/30' : 'border-gray-200'} rounded-xl p-5 shadow-sm">
+                            <div class="flex flex-col lg:flex-row lg:items-start gap-5">
+                                <div class="flex-1">
+                                    <div class="flex items-center gap-3 flex-wrap">
+                                        <h3 class="font-bold text-lg text-gray-800">${s.shopName || 'दुकान'}</h3>
+                                        <span class="bg-indigo-100 text-indigo-700 text-xs px-3 py-1 rounded-full font-mono">${s.shopCode}</span>
+                                        <span class="${isOff ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'} text-xs px-3 py-1 rounded-full">${s.status}</span>
+                                    </div>
+                                    <p class="text-sm text-gray-600">👤 ${s.ownerName || 'मालिक'}</p>
+                                    <p class="text-sm text-gray-500">📍 ${s.district || ''}, PIN: ${s.pincode || ''}</p>
+                                    <p class="text-sm text-gray-500">📱 ${s.whatsappNumber || 'N/A'}</p>
+                                    ${s.offer ? `<span class="offer-badge text-xs mt-1" style="background:${s.offerColor || '#f59e0b'};"><i class="fas fa-tag"></i> ${s.offer}</span>` : ''}
+                                    <div class="mt-2 flex items-center gap-3 flex-wrap">
+                                        <span class="text-xs text-gray-500"><i class="far fa-calendar-alt"></i> ${formatDate(s.createdAt)}</span>
+                                        <span class="bg-gray-800 text-yellow-400 px-2 py-0.5 rounded-full text-xs font-semibold"><i class="far fa-clock"></i> ${days} दिन</span>
+                                    </div>
+                                    <div class="mt-3">
+                                        <p class="text-xs font-medium text-gray-500 mb-1">प्रोडक्ट्स (${products.length})</p>
+                                        <div class="flex flex-wrap gap-2">
+                                            ${products.map((p) => `
+                                                <div class="bg-gray-50 border border-gray-200 rounded-lg px-3 py-1.5 flex items-center gap-2 text-sm">
+                                                    <span class="font-medium truncate max-w-[80px]">${p.name}</span>
+                                                    <span class="text-indigo-600 font-bold">${p.price}</span>
+                                                    <button onclick="editProduct('${s.shopCode}','${p.id}')" class="text-blue-500 hover:text-blue-700 text-xs"><i class="fas fa-edit"></i></button>
+                                                    <button onclick="deleteProduct('${s.shopCode}','${p.id}')" class="text-red-500 hover:text-red-700 text-xs"><i class="fas fa-trash"></i></button>
+                                                </div>
+                                            `).join('')}
+                                            <button onclick="addProductToShop('${s.shopCode}')" class="bg-indigo-100 hover:bg-indigo-200 text-indigo-700 text-xs px-3 py-1.5 rounded-lg transition">
+                                                <i class="fas fa-plus"></i> जोड़ें
+                                            </button>
+                                            <button onclick="deleteShop('${s.shopCode}')" class="bg-red-100 hover:bg-red-200 text-red-700 text-xs px-3 py-1.5 rounded-lg transition">
+                                                <i class="fas fa-trash-alt"></i> हटाएं
+                                            </button>
+                                        </div>
+                                    </div>
+                                    ${isOff ? `
+                                        <div class="mt-2 text-sm text-red-600 flex items-center gap-2">
+                                            <i class="fas fa-exclamation-triangle"></i> यह दुकान बंद है
+                                        </div>
+                                    ` : ''}
+                                </div>
+                                <div class="flex flex-col items-center gap-3 bg-gray-50 p-4 rounded-xl border border-gray-200 min-w-[160px]">
+                                    <div class="qr-big-box">
+                                        <div id="qr_${s.shopCode}" class="qr-container" style="width:150px;height:150px;"></div>
+                                    </div>
+                                    <div class="flex items-center gap-2 w-full">
+                                        <input type="text" value="${shopLink}" readonly class="flex-1 bg-white border border-gray-300 rounded-lg px-2 py-1 text-xs truncate" />
+                                        <button onclick="copyLink('${shopLink}')" class="text-indigo-600 hover:text-indigo-800"><i class="fas fa-copy"></i></button>
+                                    </div>
+                                    <a href="https://wa.me/${(s.whatsappNumber || '').replace(/[^0-9]/g,'') || '919999999999'}" target="_blank" class="w-full bg-green-500 hover:bg-green-600 text-white text-center py-1.5 rounded-lg text-sm transition">
+                                        <i class="fab fa-whatsapp"></i> WhatsApp
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+            }).join('');
+
+            // Generate QR Codes
+            setTimeout(() => {
+                shops.forEach((s) => {
+                    const containerId = `qr_${s.shopCode}`;
+                    const container = document.getElementById(containerId);
+                    if (container) {
+                        container.innerHTML = '';
+                        const shopLink = `https://yourapp.com/shop?code=${s.shopCode}`;
+                        try {
+                            new QRCode(container, {
+                                text: shopLink,
+                                width: 150,
+                                height: 150,
+                                colorDark: "#1e293b",
+                                colorLight: "#ffffff",
+                                correctLevel: QRCode.CorrectLevel.H
+                            });
+                        } catch (e) {
+                            container.innerHTML = '<span class="text-xs text-gray-400">QR</span>';
+                        }
+                    }
+                });
+            }, 100);
+        }
+
+        // ================================================================
+        //  PRODUCT MANAGEMENT
+        // ================================================================
+        async function editProduct(shopCode, productId) {
+            const shop = shops.find(s => s.shopCode === shopCode);
+            if (!shop) return;
+            if (shop.status === 'OFF') {
+                alert('⚠️ यह दुकान बंद है, प्रोडक्ट एडिट नहीं कर सकते');
+                return;
+            }
+            const product = (shop.products || []).find(p => p.id === productId);
+            if (!product) return;
+
+            const newName = prompt('प्रोडक्ट का नाम:', product.name);
+            if (newName !== null && newName.trim()) product.name = newName.trim();
+            const newPrice = prompt('कीमत:', product.price);
+            if (newPrice !== null && newPrice.trim()) product.price = newPrice.trim();
+            const newOffer = prompt('ऑफर:', product.offer || '');
+            if (newOffer !== null) product.offer = newOffer.trim() || '';
+
+            try {
+                await db.collection('shops').doc(shopCode).update({ products: shop.products });
+                localStorage.setItem('apna_shops', JSON.stringify(shops));
+                await renderFrontPage();
+                await renderAdminShopList();
+            } catch (error) {
+                alert('❌ त्रुटि: ' + error.message);
+            }
+        }
+
+        async function deleteProduct(shopCode, productId) {
+            if (!confirm('प्रोडक्ट हटाएं?')) return;
+            const shop = shops.find(s => s.shopCode === shopCode);
+            if (!shop) return;
+            shop.products = (shop.products || []).filter(p => p.id !== productId);
+
+            try {
+                await db.collection('shops').doc(shopCode).update({ products: shop.products });
+                localStorage.setItem('apna_shops', JSON.stringify(shops));
+                await renderFrontPage();
+                await renderAdminShopList();
+            } catch (error) {
+                alert('❌ त्रुटि: ' + error.message);
+            }
+        }
+
+        async function addProductToShop(shopCode) {
+            const shop = shops.find(s => s.shopCode === shopCode);
+            if (!shop) return;
+            if (shop.status === 'OFF') {
+                alert('⚠️ यह दुकान बंद है, प्रोडक्ट नहीं जोड़ सकते');
+                return;
+            }
+            const name = prompt('प्रोडक्ट का नाम:');
+            if (!name) return;
+            const price = prompt('कीमत:', '₹499');
+            if (!price) return;
+            const offer = prompt('ऑफर:', '') || '';
+
+            if (!shop.products) shop.products = [];
+            shop.products.push({
+                id: generateProductId(),
+                name: name.trim(),
+                price: price.trim(),
+                image: getDefaultImage(shopCode + '_' + Date.now()),
+                offer: offer.trim()
+            });
+
+            try {
+                await db.collection('shops').doc(shopCode).update({ products: shop.products });
+                localStorage.setItem('apna_shops', JSON.stringify(shops));
+                await renderFrontPage();
+                await renderAdminShopList();
+            } catch (error) {
+                alert('❌ त्रुटि: ' + error.message);
+            }
+        }
+
+        async function deleteShop(shopCode) {
+            if (!confirm('⚠️ क्या आप इस दुकान को पूरी तरह हटाना चाहते हैं?')) return;
+            if (!confirm('पक्का? यह एक्शन वापस नहीं लिया जा सकता।')) return;
+
+            try {
+                await db.collection('shops').doc(shopCode).delete();
+                shops = shops.filter(s => s.shopCode !== shopCode);
+                localStorage.setItem('apna_shops', JSON.stringify(shops));
+                await renderFrontPage();
+                await renderAdminShopList();
+                alert('✅ दुकान हटा दी गई');
+            } catch (error) {
+                alert('❌ त्रुटि: ' + error.message);
+            }
+        }
+
+        // ================================================================
+        //  COPY LINK
+        // ================================================================
+        function copyLink(link) {
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(link).then(() => alert('✅ लिंक कॉपी हो गया'));
+            } else {
+                prompt('लिंक कॉपी करें:', link);
+            }
+        }
+
+        // ================================================================
+        //  EXPOSE GLOBALS
+        // ================================================================
+        window.editProduct = editProduct;
+        window.deleteProduct = deleteProduct;
+        window.addProductToShop = addProductToShop;
+        window.deleteShop = deleteShop;
+        window.copyLink = copyLink;
+        window.openProductModal = openProductModal;
+        window.closeSuccessPopup = closeSuccessPopup;
+
+        // ================================================================
+        //  INIT
+        // ================================================================
+        (async function init() {
+            const params = new URLSearchParams(window.location.search);
+            const shop = params.get('shop');
+            if (shop) {
+                const found = shops.find(s => s.shopCode === shop);
+                if (found) currentShopCode = shop;
+            }
+            await loadAllShops(true);
+            await renderFrontPage();
+            console.log("✅ Apna Market Ready with Firebase!");
+            console.log("🔥 Firebase Project:", firebaseConfig.projectId);
+            console.log("🔒 Admin password is hidden");
+            console.log("📦 Total shops:", shops.length);
+        })();
+    </script>
+
+</body>
+</html>
